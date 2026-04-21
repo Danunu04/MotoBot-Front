@@ -1,0 +1,78 @@
+<div class="tabla-shell">
+  <table class="tabla" [attr.aria-label]="caption() || null">
+    @if (caption()) {
+      <caption class="tabla__caption">
+        {{ caption() }}
+      </caption>
+    }
+
+    <thead>
+      <tr>
+        @for (column of columns(); track column.key) {
+          <th
+            scope="col"
+            [class.tabla__cell--center]="column.align === 'center'"
+            [class.tabla__cell--end]="column.align === 'end'"
+          >
+            {{ column.label }}
+          </th>
+        }
+      </tr>
+    </thead>
+
+    <tbody>
+      @if (loading()) {
+        <tr>
+          <td class="tabla__state" [attr.colspan]="columns().length">
+            {{ loadingMessage() }}
+          </td>
+        </tr>
+      } @else if (!rows().length) {
+        <tr>
+          <td class="tabla__state" [attr.colspan]="columns().length">
+            {{ emptyMessage() }}
+          </td>
+        </tr>
+      } @else {
+        @for (row of rows(); track row.id) {
+          <tr
+            [class.tabla__row--clickable]="rowClickable()"
+            [attr.tabindex]="rowClickable() ? 0 : null"
+            (click)="rowClickable() && activateRow(row.id)"
+            (keydown.enter)="rowClickable() && activateRow(row.id)"
+            (keydown.space)="rowClickable() && activateRow(row.id); $event.preventDefault()"
+          >
+            @for (column of columns(); track column.key) {
+              <td
+                [attr.data-label]="column.label"
+                [class.tabla__cell--center]="column.align === 'center'"
+                [class.tabla__cell--end]="column.align === 'end'"
+                [class.tabla__cell--emphasis]="column.emphasis"
+              >
+                @if (interactiveColumnKey() === column.key && !rowClickable()) {
+                  <button
+                    class="tabla__action"
+                    type="button"
+                    (click)="activateRow(row.id)"
+                  >
+                    {{ row.values[column.key] }}
+                  </button>
+                } @else if (column.key === 'estado') {
+                  <span
+                    class="tabla__status"
+                    [class.tabla__status--pending]="row.values[column.key].trim().toLowerCase() === 'pendiente'"
+                    [class.tabla__status--success]="row.values[column.key].trim().toLowerCase() === 'respondido'"
+                  >
+                    {{ row.values[column.key] }}
+                  </span>
+                } @else {
+                  {{ row.values[column.key] }}
+                }
+              </td>
+            }
+          </tr>
+        }
+      }
+    </tbody>
+  </table>
+</div>

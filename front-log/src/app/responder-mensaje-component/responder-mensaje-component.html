@@ -1,0 +1,128 @@
+<section class="reply-page">
+  <header class="reply-header">
+    <div>
+      <span class="reply-header__eyebrow">Mensajes pendientes</span>
+      <h1>Responder mensaje</h1>
+      <p>Historial completo de la sesion seleccionada.</p>
+    </div>
+
+    <button class="reply-header__back" type="button" (click)="goBack()">
+      Volver
+    </button>
+  </header>
+
+  <section class="reply-layout">
+    <article class="conversation-summary">
+      <span class="conversation-summary__eyebrow">Sesion</span>
+      <strong>{{ sessionId() || 'Sin sesion' }}</strong>
+      <p>{{ conversation().length }} mensajes cargados para esta conversacion.</p>
+      <button
+        class="conversation-summary__action"
+        type="button"
+        (click)="requestHandoff()"
+        [disabled]="!canRequestHandoff()"
+      >
+        @if (isRequestingHandoff()) {
+          Derivando...
+        } @else {
+          Pasar a agente
+        }
+      </button>
+
+      <button
+        class="conversation-summary__action"
+        type="button"
+        (click)="resumeToBot()"
+        [disabled]="!sessionId() || isResuming()"
+      >
+        @if (isResuming()) {
+          Volviendo al bot...
+        } @else {
+          Volver al bot
+        }
+      </button>
+    </article>
+
+    <section class="chat-frame" aria-labelledby="chat-title">
+      <div class="chat-frame__header">
+        <button class="chat-frame__icon" type="button" (click)="goBack()" aria-label="Volver">
+          ‹
+        </button>
+
+        <div class="chat-frame__contact">
+          <h2 id="chat-title">{{ customerName() }}</h2>
+          <span>{{ connectionLabel() }}</span>
+        </div>
+
+        <span class="chat-frame__status" [class.chat-frame__status--pending]="isPendingSession()">
+          {{ isPendingSession() ? 'Pendiente' : 'Bot' }}
+        </span>
+      </div>
+
+      <div class="chat-frame__body" #chatBody>
+        @if (isLoading()) {
+          <p class="chat-frame__state">Cargando historial...</p>
+        } @else if (errorMessage()) {
+          <p class="chat-frame__state">{{ errorMessage() }}</p>
+        } @else if (!conversation().length) {
+          <p class="chat-frame__state">No encontramos mensajes para esta sesion.</p>
+        } @else {
+          @for (message of conversation(); track message.id) {
+            <article
+              class="chat-bubble"
+              [class.chat-bubble--agent]="message.author === 'agente'"
+              [class.chat-bubble--cliente]="message.author === 'cliente'"
+              [class.chat-bubble--local]="message.source === 'local'"
+            >
+              <p>{{ message.text }}</p>
+              <time>{{ message.timestamp }}</time>
+            </article>
+          }
+        }
+      </div>
+
+      <footer class="chat-frame__composer" aria-label="Caja de respuesta">
+        <input
+          type="text"
+          placeholder="Escribe una respuesta..."
+          aria-label="Escribe una respuesta"
+          [value]="draftMessage()"
+          (input)="updateDraftMessage(messageInput.value)"
+          (keydown.enter)="submitMessage()"
+          [disabled]="!isPendingSession()"
+          #messageInput
+        />
+        <button
+          type="button"
+          (click)="submitMessage()"
+          [disabled]="!draftMessage().trim() || !canSendMessages()"
+        >
+          @if (isSending()) {
+            Enviando...
+          } @else {
+            {{ sendButtonLabel() }}
+          }
+        </button>
+      </footer>
+
+      @if (!isPendingSession()) {
+        <div class="chat-frame__feedback">
+          <p class="chat-frame__feedback--error">
+            Esta sesion no esta pendiente. No se pueden enviar mensajes desde esta vista.
+          </p>
+        </div>
+      }
+
+      @if (actionMessage() || actionError()) {
+        <div class="chat-frame__feedback">
+          @if (actionMessage()) {
+            <p class="chat-frame__feedback--success">{{ actionMessage() }}</p>
+          }
+          @if (actionError()) {
+            <p class="chat-frame__feedback--error">{{ actionError() }}</p>
+          }
+        </div>
+      }
+    </section>
+  </section>
+</section>

@@ -1,0 +1,45 @@
+<aside class="sidebar" aria-label="Navegacion principal">
+  <div class="sidebar__brand">
+    <span class="sidebar__eyebrow">Sitecno</span>
+    <strong>Motorola Empresas</strong>
+    <p>Panel de seguimiento de conversaciones y pendientes.</p>
+  </div>
+
+  <nav class="sidebar__nav" aria-label="Secciones">
+    <a
+      class="sidebar__link"
+      routerLink="/home"
+      [routerLinkActiveOptions]="{ exact: true }"
+      routerLinkActive="sidebar__link--active"
+    >
+      <span class="sidebar__icon" aria-hidden="true">H</span>
+      <span>
+        <strong>Mensajes historicos</strong>
+        <small>Home</small>
+      </span>
+    </a>
+
+    <a
+      class="sidebar__link"
+      routerLink="/mensajes-pendientes"
+      routerLinkActive="sidebar__link--active"
+    >
+      <span class="sidebar__icon" aria-hidden="true">P</span>
+      <span>
+        <strong>Mensajes pendientes</strong>
+        <small>Seguimiento</small>
+      </span>
+    </a>
+  </nav>
+
+  <div class="sidebar__footer">
+    <div>
+      <p>Sesion activa</p>
+      <strong>sitecnosa</strong>
+    </div>
+
+    <button class="sidebar__logout" type="button" (click)="logout()">
+      Cerrar sesion
+    </button>
+  </div>
+</aside>

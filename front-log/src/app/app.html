@@ -1,0 +1,9 @@
+<div class="app-shell" [class.app-shell--auth]="!showSidebar()">
+  @if (showSidebar()) {
+    <app-sidebar />
+  }
+
+  <main class="app-content" [class.app-content--auth]="!showSidebar()">
+    <router-outlet />
+  </main>
+</div>

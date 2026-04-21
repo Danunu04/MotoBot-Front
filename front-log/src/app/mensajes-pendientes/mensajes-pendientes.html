@@ -1,0 +1,52 @@
+<section class="page">
+  <header class="hero">
+    <div>
+      <span class="hero__eyebrow">Seguimiento</span>
+      <h1>Todas las sesiones</h1>
+      <p>Visualiza todas las conversaciones historicas, tanto pendientes como respondidas.</p>
+    </div>
+
+    <div class="hero__badge">
+      <span>Total sesiones</span>
+      <strong>{{ pendingMessages().length }}</strong>
+    </div>
+  </header>
+
+  <section class="stats" aria-label="Resumen de sesiones">
+    <article class="stat-card">
+      <span>Pendientes</span>
+      <strong>{{ totalPendientes() }}</strong>
+    </article>
+
+    <article class="stat-card">
+      <span>Respondidas</span>
+      <strong>{{ totalRespondidas() }}</strong>
+    </article>
+
+    <article class="stat-card">
+      <span>Total</span>
+      <strong>{{ pendingMessages().length }}</strong>
+    </article>
+  </section>
+
+  <section class="panel" aria-labelledby="sesiones-title">
+    <div class="panel__header">
+      <div>
+        <span class="section-label">Bandeja</span>
+        <h2 id="sesiones-title">Todas las sesiones</h2>
+      </div>
+
+      <p class="panel__meta">Listado completo de todas las conversaciones historicas.</p>
+    </div>
+
+    <app-tabla-component
+      caption="Tabla de todas las sesiones"
+      [columns]="tableColumns"
+      [rows]="tableRows()"
+      [loading]="isLoading()"
+      [emptyMessage]="errorMessage() || 'No hay sesiones historicas en este momento.'"
+      [rowClickable]="true"
+      (rowActivated)="openConversation($event)"
+    />
+  </section>
+</section>

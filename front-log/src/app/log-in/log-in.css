@@ -1,0 +1,224 @@
+:host {
+  display: block;
+  min-height: 100dvh;
+}
+
+.login-page {
+  position: relative;
+  display: grid;
+  place-items: center;
+  min-height: 100dvh;
+  overflow: hidden;
+  background:
+    linear-gradient(140deg, rgb(0 151 178 / 0.9), rgb(9 91 119 / 0.92)),
+    var(--bg-base);
+}
+
+.login-page::before,
+.login-page::after {
+  position: absolute;
+  inset: auto;
+  width: 48rem;
+  height: 6rem;
+  background: linear-gradient(90deg, transparent, rgb(255 255 255 / 0.07), transparent);
+  content: '';
+  transform: rotate(45deg);
+}
+
+.login-page::before {
+  top: 8%;
+  left: -8rem;
+}
+
+.login-page::after {
+  right: -8rem;
+  bottom: 10%;
+}
+
+.login-page__glow {
+  position: absolute;
+  width: 22rem;
+  height: 22rem;
+  border-radius: 999px;
+  background: radial-gradient(circle, rgb(255 255 255 / 0.13), transparent 68%);
+  filter: blur(8px);
+}
+
+.login-page__glow--left {
+  top: 10%;
+  left: -5rem;
+}
+
+.login-page__glow--right {
+  right: -5rem;
+  bottom: 4%;
+}
+
+.login-card {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  gap: 1.75rem;
+  width: min(28rem, calc(100vw - 2rem));
+  padding: clamp(1.75rem, 4vw, 2.4rem);
+  border: 1px solid rgb(0 151 178 / 0.3);
+  border-radius: 2rem;
+  background:
+    linear-gradient(180deg, rgb(8 13 19 / 0.96), rgb(3 6 10 / 0.97)),
+    var(--bg-card);
+  box-shadow:
+    0 28px 70px rgb(0 0 0 / 0.35),
+    0 0 0 1px rgb(255 255 255 / 0.03) inset;
+}
+
+.login-card__brand {
+  display: grid;
+  gap: 0.75rem;
+  text-align: center;
+}
+
+.login-card__eyebrow {
+  color: rgb(173 240 255 / 0.9);
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.login-card__brand h1 {
+  margin: 0;
+  color: #f8fbfd;
+  font-size: clamp(1.8rem, 4vw, 2.3rem);
+  letter-spacing: -0.04em;
+}
+
+.login-card__brand p {
+  margin: 0;
+  color: rgb(211 222 232 / 0.7);
+  line-height: 1.55;
+}
+
+.login-form {
+  display: grid;
+  gap: 1rem;
+}
+
+.login-field {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.login-field__password {
+  position: relative;
+}
+
+.login-field span {
+  color: rgb(211 222 232 / 0.82);
+  font-size: 0.92rem;
+  font-weight: 600;
+}
+
+.login-field input {
+  min-height: 3.25rem;
+  border: 1px solid rgb(0 151 178 / 0.45);
+  border-radius: 999px;
+  width: 100%;
+  padding: 0.85rem 5.9rem 0.85rem 1rem;
+  background: rgb(255 255 255 / 0.05);
+  color: #f8fbfd;
+  transition:
+    border-color 160ms ease,
+    box-shadow 160ms ease,
+    background-color 160ms ease;
+}
+
+.login-field input::placeholder {
+  color: rgb(211 222 232 / 0.45);
+}
+
+.login-field input:hover {
+  border-color: rgb(86 208 232 / 0.75);
+}
+
+.login-field input:focus-visible {
+  outline: 2px solid rgb(126 231 255 / 0.9);
+  outline-offset: 3px;
+  border-color: rgb(126 231 255 / 0.9);
+  box-shadow: 0 0 0 5px rgb(0 151 178 / 0.18);
+}
+
+.login-field__toggle {
+  position: absolute;
+  top: 50%;
+  right: 0.45rem;
+  transform: translateY(-50%);
+  min-height: 2.35rem;
+  border: 0;
+  border-radius: 999px;
+  padding: 0.45rem 0.85rem;
+  background: rgb(0 151 178 / 0.14);
+  color: rgb(173 240 255 / 0.96);
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition:
+    background-color 160ms ease,
+    color 160ms ease;
+}
+
+.login-field__toggle:hover {
+  background: rgb(0 151 178 / 0.24);
+}
+
+.login-field__toggle:focus-visible {
+  outline: 2px solid rgb(126 231 255 / 0.9);
+  outline-offset: 2px;
+}
+
+.login-form__error {
+  margin: 0;
+  padding: 0.8rem 0.95rem;
+  border: 1px solid rgb(248 113 113 / 0.4);
+  border-radius: 1rem;
+  background: rgb(127 29 29 / 0.18);
+  color: #fecaca;
+}
+
+.login-form__submit {
+  min-height: 3.2rem;
+  border: 0;
+  border-radius: 999px;
+  padding: 0.85rem 1.25rem;
+  background: linear-gradient(135deg, #0097b2, #19b8d6);
+  color: #03151a;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: 0 16px 40px rgb(0 151 178 / 0.32);
+  transition:
+    transform 160ms ease,
+    box-shadow 160ms ease,
+    opacity 160ms ease;
+}
+
+.login-form__submit:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 20px 45px rgb(0 151 178 / 0.4);
+}
+
+.login-form__submit:focus-visible {
+  outline: 2px solid rgb(126 231 255 / 0.9);
+  outline-offset: 3px;
+}
+
+.login-form__submit:disabled {
+  cursor: not-allowed;
+  opacity: 0.58;
+  transform: none;
+  box-shadow: none;
+}
+
+@media (max-width: 640px) {
+  .login-card {
+    border-radius: 1.6rem;
+  }
+}

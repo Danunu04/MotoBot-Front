@@ -1,0 +1,63 @@
+<section class="login-page">
+  <div class="login-page__glow login-page__glow--left" aria-hidden="true"></div>
+  <div class="login-page__glow login-page__glow--right" aria-hidden="true"></div>
+
+  <article class="login-card" aria-labelledby="login-title">
+    <div class="login-card__brand">
+      <span class="login-card__eyebrow">Inspectia - Motorola Empresas</span>
+      <h1 id="login-title">Iniciar sesion</h1>
+      <p>Acceso interno al panel de conversaciones y handoff operativo.</p>
+    </div>
+
+    <form class="login-form" [formGroup]="loginForm" (ngSubmit)="submitLogin()">
+      <label class="login-field" for="username">
+        <span>Usuario</span>
+        <input
+          id="username"
+          type="text"
+          formControlName="username"
+          placeholder="Ingresa tu usuario"
+          autocomplete="username"
+        />
+      </label>
+
+      <label class="login-field" for="password">
+        <span>Contrasena</span>
+        <div class="login-field__password">
+          <input
+            id="password"
+            [type]="showPassword() ? 'text' : 'password'"
+            formControlName="password"
+            placeholder="Ingresa tu contrasena"
+            autocomplete="current-password"
+          />
+          <button
+            class="login-field__toggle"
+            type="button"
+            (click)="togglePasswordVisibility()"
+            [attr.aria-label]="showPassword() ? 'Ocultar contrasena' : 'Mostrar contrasena'"
+            [attr.aria-pressed]="showPassword()"
+          >
+            {{ showPassword() ? 'Ocultar' : 'Mostrar' }}
+          </button>
+        </div>
+      </label>
+
+      @if (authError()) {
+        <p class="login-form__error" role="alert">{{ authError() }}</p>
+      }
+
+      <button
+        class="login-form__submit"
+        type="submit"
+        [disabled]="loginForm.invalid || isSubmitting()"
+      >
+        @if (isSubmitting()) {
+          Validando...
+        } @else {
+          Log in
+        }
+      </button>
+    </form>
+  </article>
+</section>
