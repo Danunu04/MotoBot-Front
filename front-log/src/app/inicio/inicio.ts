@@ -4,6 +4,7 @@ import {
   TablaComponent,
   TablaRow,
 } from '../../components/tabla-component/tabla-component';
+import { ChatLogDownloadService, DownloadFormat } from '../shared/chat-log-download.service';
 import { ChatLogStore } from '../shared/chat-log.store';
 
 interface FilterOption {
@@ -32,6 +33,7 @@ interface InicioDisplayRow {
 })
 export class Inicio {
   private readonly chatLogStore = inject(ChatLogStore);
+  private readonly downloadService = inject(ChatLogDownloadService);
   private readonly pageSize = 10;
 
   protected readonly selectedSession = signal('');
@@ -40,6 +42,21 @@ export class Inicio {
   protected readonly logs = this.chatLogStore.logs;
   protected readonly isLoading = this.chatLogStore.isLoading;
   protected readonly errorMessage = this.chatLogStore.errorMessage;
+
+  protected readonly downloadFromDate = signal(this.buildDefaultFromDate());
+  protected readonly downloadToDate = signal(this.buildDefaultToDate());
+  protected readonly downloadFormat = signal<DownloadFormat>('pdf');
+  protected readonly isDownloading = signal(false);
+  protected readonly downloadError = signal('');
+  protected readonly downloadEmpty = signal(false);
+
+  protected readonly dateRangeError = computed(() => {
+    const from = this.downloadFromDate();
+    const to = this.downloadToDate();
+    return from && to && from > to
+      ? 'La fecha de inicio no puede ser posterior a la fecha de fin.'
+      : '';
+  });
 
   protected readonly tableColumns: readonly TablaColumn[] = [
     { key: 'sessionId', label: 'Chat', emphasis: true },
@@ -218,6 +235,81 @@ export class Inicio {
 
   private stripTag(message: string): string {
     return message.replace(/^\[[^\]]+\]\s*/gi, '').trim();
+  }
+
+  protected updateDownloadFromDate(value: string): void {
+    this.downloadFromDate.set(value);
+    this.downloadError.set('');
+    this.downloadEmpty.set(false);
+  }
+
+  protected updateDownloadToDate(value: string): void {
+    this.downloadToDate.set(value);
+    this.downloadError.set('');
+    this.downloadEmpty.set(false);
+  }
+
+  protected updateDownloadFormat(value: string): void {
+    if (value === 'pdf' || value === 'json' || value === 'csv') {
+      this.downloadFormat.set(value);
+    }
+  }
+
+  protected downloadConversations(): void {
+    if (this.dateRangeError() || this.isDownloading()) {
+      return;
+    }
+
+    const from = this.downloadFromDate();
+    const to = this.downloadToDate();
+    const format = this.downloadFormat();
+
+    this.isDownloading.set(true);
+    this.downloadError.set('');
+    this.downloadEmpty.set(false);
+
+    this.downloadService.download({ from, to, format }).subscribe({
+      next: (blob) => {
+        this.isDownloading.set(false);
+
+        if (blob.size === 0) {
+          this.downloadEmpty.set(true);
+          return;
+        }
+
+        const fromStr = from.replace(/-/g, '');
+        const toStr = to.replace(/-/g, '');
+        const filename = `chat_log_${fromStr}_${toStr}.${format}`;
+        const objectUrl = URL.createObjectURL(blob);
+        const anchor = globalThis.document.createElement('a');
+        anchor.href = objectUrl;
+        anchor.download = filename;
+        anchor.click();
+        URL.revokeObjectURL(objectUrl);
+      },
+      error: (error: unknown) => {
+        this.isDownloading.set(false);
+        const status =
+          typeof error === 'object' && error !== null && 'status' in error
+            ? (error as { status: unknown }).status
+            : null;
+        if (status === 404 || status === 204) {
+          this.downloadEmpty.set(true);
+        } else {
+          this.downloadError.set('No se pudo descargar el archivo. Intentá de nuevo más tarde.');
+        }
+      },
+    });
+  }
+
+  private buildDefaultFromDate(): string {
+    const date = new Date();
+    date.setDate(date.getDate() - 7);
+    return date.toISOString().split('T')[0];
+  }
+
+  private buildDefaultToDate(): string {
+    return new Date().toISOString().split('T')[0];
   }
 
   private isPeriodFilter(value: string): value is PeriodFilter {

@@ -38,6 +38,13 @@ export const routes: Routes = [
       ),
   },
   {
+    path: 'editor-mensajes',
+    title: 'Editor de mensajes',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./editor-mensajes/editor-mensajes').then((module) => module.EditorMensajes),
+  },
+  {
     path: '**',
     redirectTo: 'home',
   },

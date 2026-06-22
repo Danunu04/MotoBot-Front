@@ -84,6 +84,80 @@
     </div>
   </section>
 
+  <section class="panel" aria-labelledby="descarga-title">
+    <div class="panel__header">
+      <div>
+        <span class="section-label">Exportar</span>
+        <h2 id="descarga-title">Descargar conversaciones</h2>
+      </div>
+    </div>
+
+    <div class="download-shell">
+      <label class="field" for="download-from">
+        <span>Desde</span>
+        <input
+          id="download-from"
+          type="date"
+          [value]="downloadFromDate()"
+          (input)="updateDownloadFromDate(fromInput.value)"
+          #fromInput
+        />
+      </label>
+
+      <label class="field" for="download-to">
+        <span>Hasta</span>
+        <input
+          id="download-to"
+          type="date"
+          [value]="downloadToDate()"
+          (input)="updateDownloadToDate(toInput.value)"
+          #toInput
+        />
+      </label>
+
+      <label class="field" for="download-format">
+        <span>Formato</span>
+        <select
+          id="download-format"
+          [value]="downloadFormat()"
+          (change)="updateDownloadFormat(formatSelect.value)"
+          #formatSelect
+        >
+          <option value="pdf">PDF</option>
+          <option value="json">JSON</option>
+          <option value="csv">CSV</option>
+        </select>
+      </label>
+
+      <div class="download-action">
+        <button
+          class="primary-button"
+          type="button"
+          (click)="downloadConversations()"
+          [disabled]="!!dateRangeError() || isDownloading()"
+          aria-label="Descargar conversaciones"
+        >
+          @if (isDownloading()) {
+            <span class="spinner" aria-hidden="true"></span>
+            Descargando...
+          } @else {
+            Descargar
+          }
+        </button>
+      </div>
+    </div>
+
+    @if (dateRangeError()) {
+      <p class="alert alert--error" role="alert">{{ dateRangeError() }}</p>
+    }
+    @if (downloadError()) {
+      <p class="alert alert--error" role="alert">{{ downloadError() }}</p>
+    }
+    @if (downloadEmpty()) {
+      <p class="alert alert--info" role="status">No hay conversaciones en el rango seleccionado.</p>
+    }
+  </section>
+
   <section class="panel" aria-labelledby="tabla-historica-title">
     <div class="panel__header">
       <div>

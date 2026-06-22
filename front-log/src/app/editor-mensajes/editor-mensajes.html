@@ -1,0 +1,127 @@
+<section class="page">
+  <header class="hero">
+    <div>
+      <span class="hero__eyebrow">Configuración</span>
+      <h1>Editor de mensajes</h1>
+      <p>Editá los textos que envía el bot sin tocar el código ni hacer deploy.</p>
+    </div>
+
+    <button
+      class="ghost-button"
+      type="button"
+      (click)="load()"
+      [disabled]="isLoading()"
+    >
+      Recargar
+    </button>
+  </header>
+
+  <section class="panel" aria-labelledby="editor-config-title">
+    <div class="panel__header">
+      <div>
+        <span class="section-label">Identificación</span>
+        <h2 id="editor-config-title">¿Quién edita?</h2>
+      </div>
+    </div>
+
+    <label class="field" for="updated-by">
+      <span>Editado por</span>
+      <input
+        id="updated-by"
+        type="text"
+        class="text-input"
+        placeholder="Tu nombre o usuario"
+        [value]="updatedBy()"
+        (input)="updateUpdatedBy(updatedByInput.value)"
+        #updatedByInput
+      />
+    </label>
+  </section>
+
+  @if (isLoading()) {
+    <div class="state-box" role="status">
+      <span class="spinner" aria-hidden="true"></span>
+      <p>Cargando mensajes...</p>
+    </div>
+  } @else if (errorMessage()) {
+    <div class="state-box state-box--error" role="alert">
+      <p>{{ errorMessage() }}</p>
+      <button class="ghost-button" type="button" (click)="load()">Reintentar</button>
+    </div>
+  } @else if (groupedMessages().length === 0) {
+    <div class="state-box" role="status">
+      <p>No hay mensajes de tipo texto configurados.</p>
+    </div>
+  } @else {
+    @for (group of groupedMessages(); track group.stateName) {
+      <section class="panel" [attr.aria-labelledby]="'group-' + group.stateName">
+        <div class="panel__header">
+          <div>
+            <span class="section-label">Estado</span>
+            <h2 [id]="'group-' + group.stateName">{{ group.stateName }}</h2>
+          </div>
+        </div>
+
+        <div class="messages-grid">
+          @for (msg of group.messages; track msg.key) {
+            <article class="message-card">
+              <strong class="message-card__label">{{ msg.label }}</strong>
+
+              <label class="field" [for]="'msg-' + msg.key">
+                <span>Contenido</span>
+                <textarea
+                  [id]="'msg-' + msg.key"
+                  class="message-textarea"
+                  rows="4"
+                  [value]="getContent(msg.key, msg.content)"
+                  (input)="setContent(msg.key, textarea.value)"
+                  [disabled]="savingKey() === msg.key"
+                  #textarea
+                ></textarea>
+              </label>
+
+              @if (msg.default_content) {
+                <details class="reference">
+                  <summary>Ver texto por defecto</summary>
+                  <p class="reference__text">{{ msg.default_content }}</p>
+                </details>
+              }
+
+              @if (feedbackMap()[msg.key] === 'success') {
+                <p class="alert alert--success" role="status">Mensaje actualizado correctamente.</p>
+              }
+              @if (feedbackMap()[msg.key] === 'error') {
+                <p class="alert alert--error" role="alert">No se pudo guardar. Intentá de nuevo.</p>
+              }
+
+              <div class="message-card__actions">
+                <button
+                  class="ghost-button"
+                  type="button"
+                  (click)="restore(msg)"
+                  [disabled]="savingKey() === msg.key"
+                >
+                  Restaurar
+                </button>
+
+                <button
+                  class="primary-button"
+                  type="button"
+                  (click)="save(msg)"
+                  [disabled]="savingKey() === msg.key"
+                >
+                  @if (savingKey() === msg.key) {
+                    <span class="spinner" aria-hidden="true"></span>
+                    Guardando...
+                  } @else {
+                    Guardar
+                  }
+                </button>
+              </div>
+            </article>
+          }
+        </div>
+      </section>
+    }
+  }
+</section>
