@@ -23,20 +23,24 @@ export class EditorMensajes {
   protected readonly errorMessage = signal('');
   protected readonly updatedBy = signal('');
   protected readonly editedContent = signal<Record<string, string>>({});
+  protected readonly editedDescription = signal<Record<string, string>>({});
   protected readonly savingKey = signal<string | null>(null);
   protected readonly feedbackMap = signal<Record<string, FeedbackType>>({});
 
   protected readonly groupedMessages = computed<readonly MessageGroup[]>(() => {
-    const textMessages = this.messages().filter((msg) => msg.type === 'text');
-    const groupMap = new Map<string, BotMessage[]>();
+    return this.groupByState(this.messages().filter((m) => m.type === 'text'));
+  });
 
-    for (const msg of textMessages) {
-      const group = groupMap.get(msg.state_name) ?? [];
-      group.push(msg);
-      groupMap.set(msg.state_name, group);
-    }
+  protected readonly groupedButtons = computed<readonly MessageGroup[]>(() => {
+    return this.groupByState(this.messages().filter((m) => m.type === 'button'));
+  });
 
-    return [...groupMap.entries()].map(([stateName, msgs]) => ({ stateName, messages: msgs }));
+  protected readonly listButtonMessages = computed<readonly BotMessage[]>(() => {
+    return this.messages().filter((m) => m.type === 'list_button');
+  });
+
+  protected readonly groupedListRows = computed<readonly MessageGroup[]>(() => {
+    return this.groupByState(this.messages().filter((m) => m.type === 'list_row'));
   });
 
   constructor() {
@@ -51,6 +55,7 @@ export class EditorMensajes {
       next: (msgs) => {
         this.messages.set(msgs);
         this.editedContent.set({});
+        this.editedDescription.set({});
         this.isLoading.set(false);
       },
       error: () => {
@@ -68,14 +73,28 @@ export class EditorMensajes {
     this.editedContent.update((current) => ({ ...current, [key]: value }));
   }
 
+  protected getDesc(key: string, originalDesc: string): string {
+    return this.editedDescription()[key] ?? originalDesc;
+  }
+
+  protected setDesc(key: string, value: string): void {
+    this.editedDescription.update((current) => ({ ...current, [key]: value }));
+  }
+
+  protected isOver(key: string, originalContent: string, limit: number): boolean {
+    return this.getContent(key, originalContent).length > limit;
+  }
+
+  protected isDescOver(key: string, originalDesc: string, limit: number): boolean {
+    return this.getDesc(key, originalDesc).length > limit;
+  }
+
   protected updateUpdatedBy(value: string): void {
     this.updatedBy.set(value);
   }
 
   protected save(msg: BotMessage): void {
-    if (this.savingKey()) {
-      return;
-    }
+    if (this.savingKey()) return;
 
     const content = this.getContent(msg.key, msg.content);
     this.savingKey.set(msg.key);
@@ -100,16 +119,65 @@ export class EditorMensajes {
     });
   }
 
+  protected saveListRow(msg: BotMessage): void {
+    if (this.savingKey()) return;
+
+    const title = this.getContent(msg.key, msg.content);
+    const description = this.getDesc(msg.key, msg.description ?? '');
+    this.savingKey.set(msg.key);
+
+    this.botMessagesService.updateListRow(msg.key, title, description, this.updatedBy()).subscribe({
+      next: () => {
+        this.savingKey.set(null);
+        this.messages.update((current) =>
+          current.map((m) => (m.key === msg.key ? { ...m, content: title, description } : m)),
+        );
+        this.editedContent.update((current) => {
+          const next = { ...current };
+          delete next[msg.key];
+          return next;
+        });
+        this.editedDescription.update((current) => {
+          const next = { ...current };
+          delete next[msg.key];
+          return next;
+        });
+        this.showFeedback(msg.key, 'success');
+      },
+      error: () => {
+        this.savingKey.set(null);
+        this.showFeedback(msg.key, 'error');
+      },
+    });
+  }
+
   protected restore(msg: BotMessage): void {
     const confirmed = globalThis.confirm(
       `¿Restaurar "${msg.label}" al texto por defecto? Esta acción no guarda automáticamente.`,
     );
-
-    if (!confirmed) {
-      return;
-    }
+    if (!confirmed) return;
 
     this.setContent(msg.key, msg.default_content);
+  }
+
+  protected restoreListRow(msg: BotMessage): void {
+    const confirmed = globalThis.confirm(
+      `¿Restaurar "${msg.label}" a los valores por defecto? Esta acción no guarda automáticamente.`,
+    );
+    if (!confirmed) return;
+
+    this.setContent(msg.key, msg.default_content);
+    this.setDesc(msg.key, msg.default_description ?? '');
+  }
+
+  private groupByState(msgs: readonly BotMessage[]): readonly MessageGroup[] {
+    const groupMap = new Map<string, BotMessage[]>();
+    for (const msg of msgs) {
+      const group = groupMap.get(msg.state_name) ?? [];
+      group.push(msg);
+      groupMap.set(msg.state_name, group);
+    }
+    return [...groupMap.entries()].map(([stateName, ms]) => ({ stateName, messages: ms }));
   }
 
   private showFeedback(key: string, type: FeedbackType): void {

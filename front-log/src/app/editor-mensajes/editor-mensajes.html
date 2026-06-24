@@ -48,47 +48,233 @@
       <p>{{ errorMessage() }}</p>
       <button class="ghost-button" type="button" (click)="load()">Reintentar</button>
     </div>
-  } @else if (groupedMessages().length === 0) {
-    <div class="state-box" role="status">
-      <p>No hay mensajes de tipo texto configurados.</p>
-    </div>
   } @else {
-    @for (group of groupedMessages(); track group.stateName) {
-      <section class="panel" [attr.aria-labelledby]="'group-' + group.stateName">
+
+    <!-- ── MENSAJES DE TEXTO ───────────────────────────────────────── -->
+    @if (groupedMessages().length === 0) {
+      <div class="state-box" role="status">
+        <p>No hay mensajes de tipo texto configurados.</p>
+      </div>
+    } @else {
+      @for (group of groupedMessages(); track group.stateName) {
+        <section class="panel" [attr.aria-labelledby]="'group-' + group.stateName">
+          <div class="panel__header">
+            <div>
+              <span class="section-label">Estado</span>
+              <h2 [id]="'group-' + group.stateName">{{ group.stateName }}</h2>
+            </div>
+          </div>
+
+          <div class="messages-grid">
+            @for (msg of group.messages; track msg.key) {
+              <article class="message-card">
+                <strong class="message-card__label">{{ msg.label }}</strong>
+
+                <label class="field" [for]="'msg-' + msg.key">
+                  <span>Contenido</span>
+                  <textarea
+                    [id]="'msg-' + msg.key"
+                    class="message-textarea"
+                    rows="4"
+                    [value]="getContent(msg.key, msg.content)"
+                    (input)="setContent(msg.key, textarea.value)"
+                    [disabled]="savingKey() === msg.key"
+                    #textarea
+                  ></textarea>
+                </label>
+
+                @if (msg.default_content) {
+                  <details class="reference">
+                    <summary>Ver texto por defecto</summary>
+                    <p class="reference__text">{{ msg.default_content }}</p>
+                  </details>
+                }
+
+                @if (feedbackMap()[msg.key] === 'success') {
+                  <p class="alert alert--success" role="status">Mensaje actualizado correctamente.</p>
+                }
+                @if (feedbackMap()[msg.key] === 'error') {
+                  <p class="alert alert--error" role="alert">No se pudo guardar. Intentá de nuevo.</p>
+                }
+
+                <div class="message-card__actions">
+                  <button
+                    class="ghost-button"
+                    type="button"
+                    (click)="restore(msg)"
+                    [disabled]="savingKey() === msg.key"
+                  >
+                    Restaurar
+                  </button>
+
+                  <button
+                    class="primary-button"
+                    type="button"
+                    (click)="save(msg)"
+                    [disabled]="savingKey() === msg.key"
+                  >
+                    @if (savingKey() === msg.key) {
+                      <span class="spinner" aria-hidden="true"></span>
+                      Guardando...
+                    } @else {
+                      Guardar
+                    }
+                  </button>
+                </div>
+              </article>
+            }
+          </div>
+        </section>
+      }
+    }
+
+    <!-- ── BOTONES DE RESPUESTA RÁPIDA ───────────────────────────── -->
+    <div class="section-divider" aria-hidden="true"></div>
+
+    <header class="section-heading">
+      <div>
+        <span class="hero__eyebrow">Botones de respuesta rápida</span>
+        <h2>Editor de botones</h2>
+        <p>Máximo 50 caracteres por botón.</p>
+      </div>
+    </header>
+
+    @if (groupedButtons().length === 0) {
+      <div class="state-box" role="status">
+        <p>No hay botones configurados.</p>
+      </div>
+    } @else {
+      @for (group of groupedButtons(); track group.stateName) {
+        <section class="panel" [attr.aria-labelledby]="'btn-group-' + group.stateName">
+          <div class="panel__header">
+            <div>
+              <span class="section-label">Estado</span>
+              <h2 [id]="'btn-group-' + group.stateName">{{ group.stateName }}</h2>
+            </div>
+          </div>
+
+          <div class="messages-grid">
+            @for (msg of group.messages; track msg.key) {
+              <article class="message-card">
+                <strong class="message-card__label">{{ msg.label }}</strong>
+
+                <div class="field">
+                  <div class="btn-field-header">
+                    <label [for]="'btn-' + msg.key"><span>Título del botón</span></label>
+                    <span
+                      class="char-counter"
+                      [class.char-counter--over]="isOver(msg.key, msg.content, 50)"
+                      aria-live="polite"
+                    >{{ getContent(msg.key, msg.content).length }}/50</span>
+                  </div>
+                  <input
+                    type="text"
+                    [id]="'btn-' + msg.key"
+                    class="text-input"
+                    [value]="getContent(msg.key, msg.content)"
+                    (input)="setContent(msg.key, btnInput.value)"
+                    [disabled]="savingKey() === msg.key"
+                    #btnInput
+                  />
+                </div>
+
+                @if (isOver(msg.key, msg.content, 50)) {
+                  <p class="alert alert--warning" role="alert">
+                    Los botones de WhatsApp tienen un máximo de 50 caracteres.
+                  </p>
+                }
+
+                @if (feedbackMap()[msg.key] === 'success') {
+                  <p class="alert alert--success" role="status">Botón actualizado correctamente.</p>
+                }
+                @if (feedbackMap()[msg.key] === 'error') {
+                  <p class="alert alert--error" role="alert">No se pudo guardar. Intentá de nuevo.</p>
+                }
+
+                <div class="message-card__actions">
+                  <button
+                    class="ghost-button"
+                    type="button"
+                    (click)="restore(msg)"
+                    [disabled]="savingKey() === msg.key"
+                  >
+                    Restaurar
+                  </button>
+
+                  <button
+                    class="primary-button"
+                    type="button"
+                    (click)="save(msg)"
+                    [disabled]="savingKey() === msg.key || isOver(msg.key, msg.content, 50)"
+                  >
+                    @if (savingKey() === msg.key) {
+                      <span class="spinner" aria-hidden="true"></span>
+                      Guardando...
+                    } @else {
+                      Guardar
+                    }
+                  </button>
+                </div>
+              </article>
+            }
+          </div>
+        </section>
+      }
+    }
+
+    <!-- ── OPCIONES DEL MENÚ PRINCIPAL ───────────────────────────── -->
+    <div class="section-divider" aria-hidden="true"></div>
+
+    <header class="section-heading">
+      <div>
+        <span class="hero__eyebrow">Menú principal</span>
+        <h2>Opciones del menú</h2>
+        <p>Título (máx. 24 caracteres) y descripción (máx. 72 caracteres) de cada opción del List Message.</p>
+      </div>
+    </header>
+
+    @if (listButtonMessages().length > 0) {
+      <section class="panel" aria-labelledby="list-button-heading">
         <div class="panel__header">
           <div>
-            <span class="section-label">Estado</span>
-            <h2 [id]="'group-' + group.stateName">{{ group.stateName }}</h2>
+            <span class="section-label">Botón de apertura</span>
+            <h2 id="list-button-heading">Texto del botón</h2>
           </div>
         </div>
 
         <div class="messages-grid">
-          @for (msg of group.messages; track msg.key) {
+          @for (msg of listButtonMessages(); track msg.key) {
             <article class="message-card">
               <strong class="message-card__label">{{ msg.label }}</strong>
 
-              <label class="field" [for]="'msg-' + msg.key">
-                <span>Contenido</span>
-                <textarea
-                  [id]="'msg-' + msg.key"
-                  class="message-textarea"
-                  rows="4"
+              <div class="field">
+                <div class="btn-field-header">
+                  <label [for]="'lbtn-' + msg.key"><span>Texto del botón</span></label>
+                  <span
+                    class="char-counter"
+                    [class.char-counter--over]="isOver(msg.key, msg.content, 20)"
+                    aria-live="polite"
+                  >{{ getContent(msg.key, msg.content).length }}/20</span>
+                </div>
+                <input
+                  type="text"
+                  [id]="'lbtn-' + msg.key"
+                  class="text-input"
                   [value]="getContent(msg.key, msg.content)"
-                  (input)="setContent(msg.key, textarea.value)"
+                  (input)="setContent(msg.key, lbtnInput.value)"
                   [disabled]="savingKey() === msg.key"
-                  #textarea
-                ></textarea>
-              </label>
+                  #lbtnInput
+                />
+              </div>
 
-              @if (msg.default_content) {
-                <details class="reference">
-                  <summary>Ver texto por defecto</summary>
-                  <p class="reference__text">{{ msg.default_content }}</p>
-                </details>
+              @if (isOver(msg.key, msg.content, 20)) {
+                <p class="alert alert--warning" role="alert">
+                  El texto del botón tiene un máximo de 20 caracteres.
+                </p>
               }
 
               @if (feedbackMap()[msg.key] === 'success') {
-                <p class="alert alert--success" role="status">Mensaje actualizado correctamente.</p>
+                <p class="alert alert--success" role="status">Botón actualizado correctamente.</p>
               }
               @if (feedbackMap()[msg.key] === 'error') {
                 <p class="alert alert--error" role="alert">No se pudo guardar. Intentá de nuevo.</p>
@@ -108,7 +294,7 @@
                   class="primary-button"
                   type="button"
                   (click)="save(msg)"
-                  [disabled]="savingKey() === msg.key"
+                  [disabled]="savingKey() === msg.key || isOver(msg.key, msg.content, 20)"
                 >
                   @if (savingKey() === msg.key) {
                     <span class="spinner" aria-hidden="true"></span>
@@ -122,6 +308,120 @@
           }
         </div>
       </section>
+    }
+
+    @if (groupedListRows().length === 0) {
+      <div class="state-box" role="status">
+        <p>No hay opciones de menú configuradas.</p>
+      </div>
+    } @else {
+      @for (group of groupedListRows(); track group.stateName) {
+        <section class="panel" [attr.aria-labelledby]="'row-group-' + group.stateName">
+          <div class="panel__header">
+            <div>
+              <span class="section-label">Estado</span>
+              <h2 [id]="'row-group-' + group.stateName">{{ group.stateName }}</h2>
+            </div>
+          </div>
+
+          <div class="messages-grid">
+            @for (msg of group.messages; track msg.key) {
+              <article class="message-card">
+                <div class="row-header">
+                  <strong class="message-card__label">{{ msg.label }}</strong>
+                  @if (msg.id) {
+                    <span class="row-id">ID: {{ msg.id }}</span>
+                  }
+                </div>
+
+                <div class="field">
+                  <div class="btn-field-header">
+                    <label [for]="'row-title-' + msg.key"><span>Título</span></label>
+                    <span
+                      class="char-counter"
+                      [class.char-counter--over]="isOver(msg.key, msg.content, 24)"
+                      aria-live="polite"
+                    >{{ getContent(msg.key, msg.content).length }}/24</span>
+                  </div>
+                  <input
+                    type="text"
+                    [id]="'row-title-' + msg.key"
+                    class="text-input"
+                    [value]="getContent(msg.key, msg.content)"
+                    (input)="setContent(msg.key, titleInput.value)"
+                    [disabled]="savingKey() === msg.key"
+                    #titleInput
+                  />
+                </div>
+
+                @if (isOver(msg.key, msg.content, 24)) {
+                  <p class="alert alert--warning" role="alert">
+                    El título tiene un máximo de 24 caracteres.
+                  </p>
+                }
+
+                <div class="field">
+                  <div class="btn-field-header">
+                    <label [for]="'row-desc-' + msg.key"><span>Descripción</span></label>
+                    <span
+                      class="char-counter"
+                      [class.char-counter--over]="isDescOver(msg.key, msg.description ?? '', 72)"
+                      aria-live="polite"
+                    >{{ getDesc(msg.key, msg.description ?? '').length }}/72</span>
+                  </div>
+                  <input
+                    type="text"
+                    [id]="'row-desc-' + msg.key"
+                    class="text-input"
+                    [value]="getDesc(msg.key, msg.description ?? '')"
+                    (input)="setDesc(msg.key, descInput.value)"
+                    [disabled]="savingKey() === msg.key"
+                    #descInput
+                  />
+                </div>
+
+                @if (isDescOver(msg.key, msg.description ?? '', 72)) {
+                  <p class="alert alert--warning" role="alert">
+                    La descripción tiene un máximo de 72 caracteres.
+                  </p>
+                }
+
+                @if (feedbackMap()[msg.key] === 'success') {
+                  <p class="alert alert--success" role="status">Opción actualizada correctamente.</p>
+                }
+                @if (feedbackMap()[msg.key] === 'error') {
+                  <p class="alert alert--error" role="alert">No se pudo guardar. Intentá de nuevo.</p>
+                }
+
+                <div class="message-card__actions">
+                  <button
+                    class="ghost-button"
+                    type="button"
+                    (click)="restoreListRow(msg)"
+                    [disabled]="savingKey() === msg.key"
+                  >
+                    Restaurar
+                  </button>
+
+                  <button
+                    class="primary-button"
+                    type="button"
+                    (click)="saveListRow(msg)"
+                    [disabled]="savingKey() === msg.key || isOver(msg.key, msg.content, 24) || isDescOver(msg.key, msg.description ?? '', 72)"
+                  >
+                    @if (savingKey() === msg.key) {
+                      <span class="spinner" aria-hidden="true"></span>
+                      Guardando...
+                    } @else {
+                      Guardar
+                    }
+                  </button>
+                </div>
+              </article>
+            }
+          </div>
+        </section>
+      }
     }
   }
 </section>
