@@ -76,8 +76,8 @@ export class Inicio {
   protected readonly periodOptions: readonly FilterOption[] = [
     { label: 'Todo el periodo', value: 'all' },
     { label: 'Hoy', value: 'today' },
-    { label: 'Ultimos 7 dias', value: '7d' },
-    { label: 'Ultimos 30 dias', value: '30d' },
+    { label: 'Últimos 7 días', value: '7d' },
+    { label: 'Últimos 30 días', value: '30d' },
   ];
 
   protected readonly filteredRows = computed(() =>
@@ -130,7 +130,7 @@ export class Inicio {
 
     return this.logs().length
       ? 'No hay resultados para los filtros seleccionados.'
-      : 'No hay mensajes historicos todavia.';
+      : 'No hay mensajes históricos todavía.';
   });
 
   protected readonly totalMessages = computed(() => this.logs().length);

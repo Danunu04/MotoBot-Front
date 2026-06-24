@@ -1,23 +1,40 @@
 @import 'tailwindcss';
 
 :root {
-  --bg-base: #0d1117;
-  --bg-card: #161b22;
-  --bg-input: #1c2230;
-  --bg-item: #1e2535;
-  --bg-item-hover: #252d3d;
-  --border-subtle: #2a3245;
-  --border-focus: #59c2d6;
-  --text-primary: #e6edf3;
-  --text-secondary: #8b949e;
-  --text-muted: #58677a;
-  --accent-blue: #0097b2;
-  --accent-blue-bright: #23bdd7;
-  --accent-green: #3fb950;
-  --accent-purple: #0097b2;
-  --accent-purple-hover: #00839a;
-  --step-active: #0097b2;
-  --step-inactive: #2a3245;
+  --bg-base: oklch(10.5% 0.012 245);
+  --bg-card: oklch(15% 0.014 240);
+  --bg-input: oklch(18.5% 0.018 238);
+  --bg-item: oklch(20.5% 0.02 238);
+  --bg-item-hover: oklch(24% 0.022 236);
+  --border-subtle: oklch(27% 0.03 235);
+  --border-focus: oklch(70% 0.13 210);
+  --text-primary: oklch(92% 0.006 218);
+  --text-secondary: oklch(61% 0.016 222);
+  --text-muted: oklch(46% 0.022 228);
+  --accent-blue: oklch(55% 0.15 210);
+  --accent-blue-bright: oklch(68% 0.14 208);
+  --accent-green: oklch(70% 0.18 145);
+  --accent-purple: oklch(55% 0.15 210);
+  --accent-purple-hover: oklch(50% 0.14 210);
+  --step-active: oklch(55% 0.15 210);
+  --step-inactive: oklch(27% 0.03 235);
+
+  --accent-red-bg: rgb(239 68 68 / 0.1);
+  --accent-red-border: rgb(239 68 68 / 0.3);
+  --accent-red-text: #fca5a5;
+  --accent-green-bg: rgb(63 185 80 / 0.1);
+  --accent-green-border: rgb(63 185 80 / 0.3);
+  --accent-green-text: #56d364;
+  --text-on-accent: #03151a;
+
+  --font-size-xs: 0.75rem;
+  --font-size-sm: 0.8125rem;
+  --font-size-base: 1rem;
+  --font-size-ui: 1.0625rem;
+  --font-size-heading: 1.375rem;
+
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
 }
 
 html,
@@ -29,7 +46,11 @@ body {
   margin: 0;
   background: var(--bg-base);
   color: var(--text-primary);
-  font-family: 'Segoe UI', system-ui, sans-serif;
+  font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+  font-size: var(--font-size-base);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 *,
