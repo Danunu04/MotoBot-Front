@@ -1,9 +1,9 @@
 {
   "/api": {
-    "target": "https://motobot-995204915971.us-central1.run.app",
+    "target": "http://localhost:8000",
     "secure": false,
     "changeOrigin": true,
-    "pathRewrite": { "^/api": "" } ,
+    "pathRewrite": { "^/api": "" },
     "logLevel": "debug"
   }
 }

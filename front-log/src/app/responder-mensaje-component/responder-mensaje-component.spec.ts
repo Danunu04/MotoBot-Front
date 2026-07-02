@@ -77,8 +77,8 @@ describe('ResponderMensajeComponent', () => {
     const request = httpTestingController.expectOne('/api/bot/send');
     request.flush({ ok: true, session_id: 'session-123' });
 
-    expect(component['isPendingSession']()).toBeTrue();
-    expect(component['canSendMessages']()).toBeTrue();
+    expect(component['isPendingSession']()).toBe(true);
+    expect(component['canSendMessages']()).toBe(true);
 
     httpTestingController.expectOne('/api/handoff/sessions').flush({
       sessions: [{ session_id: 'session-123' }],

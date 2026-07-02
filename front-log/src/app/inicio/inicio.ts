@@ -45,7 +45,7 @@ export class Inicio {
 
   protected readonly downloadFromDate = signal(this.buildDefaultFromDate());
   protected readonly downloadToDate = signal(this.buildDefaultToDate());
-  protected readonly downloadFormat = signal<DownloadFormat>('pdf');
+  protected readonly downloadFormat = signal<DownloadFormat>('txt');
   protected readonly isDownloading = signal(false);
   protected readonly downloadError = signal('');
   protected readonly downloadEmpty = signal(false);
@@ -149,10 +149,6 @@ export class Inicio {
     });
   }
 
-  protected printLogs(): void {
-    globalThis.print();
-  }
-
   protected clearFilters(): void {
     this.selectedSession.set('');
     this.selectedPeriod.set('all');
@@ -250,7 +246,7 @@ export class Inicio {
   }
 
   protected updateDownloadFormat(value: string): void {
-    if (value === 'pdf' || value === 'json' || value === 'csv') {
+    if (value === 'pdf' || value === 'json' || value === 'csv' || value === 'txt') {
       this.downloadFormat.set(value);
     }
   }

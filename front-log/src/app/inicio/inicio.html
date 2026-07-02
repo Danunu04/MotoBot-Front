@@ -8,14 +8,6 @@
       </p>
     </div>
 
-    <button
-      class="primary-button"
-      type="button"
-      (click)="printLogs()"
-      [disabled]="isLoading() || !!errorMessage() || !logs().length"
-    >
-      Imprimir reporte
-    </button>
   </header>
 
   <section class="stats" aria-label="Resumen">
@@ -123,6 +115,7 @@
           (change)="updateDownloadFormat(formatSelect.value)"
           #formatSelect
         >
+          <option value="txt">TXT</option>
           <option value="pdf">PDF</option>
           <option value="json">JSON</option>
           <option value="csv">CSV</option>
