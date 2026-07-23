@@ -3,7 +3,16 @@ import { Injectable, inject } from '@angular/core';
 import { Observable, map } from 'rxjs';
 import { environment } from '../../environments/environment';
 
-export type BotMessageType = 'text' | 'button' | 'button_text' | 'list_row_title' | 'list_row_description';
+export type BotMessageType = 'text' | 'button' | 'button_text' | 'list_row_title' | 'list_row_description' | 'list_section_title';
+
+export function extractApiError(err: unknown): string {
+  if (err && typeof err === 'object' && 'error' in err) {
+    const e = (err as { error: unknown }).error;
+    if (e && typeof e === 'object' && 'detail' in e) return String((e as { detail: unknown }).detail);
+  }
+  if (err && typeof err === 'object' && 'message' in err) return String((err as { message: unknown }).message);
+  return 'Error desconocido.';
+}
 
 export interface BotMessage {
   readonly key: string;
@@ -39,6 +48,7 @@ export const MESSAGE_LIMITS: Readonly<Record<BotMessageType, number>> = {
   button_text: 2000,
   list_row_title: 24,
   list_row_description: 72,
+  list_section_title: 24,
 };
 
 export const MESSAGE_TYPE_LABELS: Readonly<Record<BotMessageType, string>> = {
@@ -47,6 +57,7 @@ export const MESSAGE_TYPE_LABELS: Readonly<Record<BotMessageType, string>> = {
   button_text: 'Texto de botón',
   list_row_title: 'Título de fila',
   list_row_description: 'Descripción de fila',
+  list_section_title: 'Título de sección',
 };
 
 interface MessagesApiResponse {

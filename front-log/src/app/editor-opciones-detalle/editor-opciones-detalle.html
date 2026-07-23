@@ -1,0 +1,420 @@
+<section class="page">
+
+  <header class="hero">
+    <button class="back-btn" type="button" (click)="goBack()" aria-label="Volver a grupos">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+        <path fill-rule="evenodd" d="M17 10a.75.75 0 0 1-.75.75H5.612l4.158 3.96a.75.75 0 1 1-1.04 1.08l-5.5-5.25a.75.75 0 0 1 0-1.08l5.5-5.25a.75.75 0 1 1 1.04 1.08L5.612 9.25H16.25A.75.75 0 0 1 17 10z" clip-rule="evenodd"/>
+      </svg>
+      Volver
+    </button>
+    <div class="hero__main">
+      <span class="hero__eyebrow">Editor de opciones</span>
+      <h1><code>{{ groupName() }}</code></h1>
+      <div class="hero__meta">
+        <span class="type-pill" [class]="'type-pill--' + (interactiveType() ?? 'none')">
+          {{ interactiveLabel() }}
+        </span>
+        <span class="hero__count">{{ options().length }} / 10 opciones</span>
+        @if (thresholdWarning()) {
+          <span class="threshold-badge">{{ thresholdWarning() }}</span>
+        }
+      </div>
+    </div>
+  </header>
+
+  @if (actionMessage()) {
+    <p class="feedback-banner" [class.feedback-banner--error]="actionMessage().startsWith('Error')">
+      {{ actionMessage() }}
+    </p>
+  }
+
+  @if (isLoading()) {
+    <section class="panel"><p class="loading-text">Cargando grupo...</p></section>
+  } @else if (errorMessage()) {
+    <section class="panel"><p class="error-text">{{ errorMessage() }}</p></section>
+  } @else {
+
+    <!-- WHATSAPP PREVIEW -->
+    <section class="panel panel--preview" aria-labelledby="preview-title">
+      <div class="panel__header">
+        <div>
+          <span class="section-label">Vista previa</span>
+          <h2 id="preview-title">Cómo se verá en WhatsApp</h2>
+        </div>
+        @if (isDefaultFallback()) {
+          <span class="badge badge--warning">Sin datos en BD — valores por defecto</span>
+        }
+      </div>
+
+      @if (interactiveType() === 'button') {
+        <div class="wa-preview">
+          <div class="wa-bubble">
+            <p class="wa-bubble__text">Texto del bot...</p>
+          </div>
+          <div class="wa-buttons">
+            @for (opt of options(); track opt.option_id) {
+              <div class="wa-button">{{ opt.button_title }}</div>
+            }
+          </div>
+        </div>
+      } @else if (interactiveType() === 'list') {
+        <div class="wa-preview">
+          <div class="wa-bubble">
+            <p class="wa-bubble__text">Texto del bot...</p>
+            <button class="wa-list-trigger" type="button" disabled>
+              <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path d="M3 5h14M3 10h14M3 15h14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+              {{ groupConfig()?.button_text || groupConfig()?.button_text_key }}
+            </button>
+          </div>
+          <div class="wa-list">
+            <p class="wa-list__section">{{ groupConfig()?.section_title || groupConfig()?.section_title_key }}</p>
+            @for (opt of options(); track opt.option_id) {
+              <div class="wa-list__row">
+                <div>
+                  <p class="wa-list__title">{{ opt.title }}</p>
+                  @if (opt.description) {
+                    <p class="wa-list__desc">{{ opt.description }}</p>
+                  }
+                </div>
+                <div class="wa-list__radio"></div>
+              </div>
+            }
+          </div>
+        </div>
+      } @else {
+        <p class="empty-state">Agregá al menos una opción para ver la previsualización.</p>
+      }
+    </section>
+
+    <!-- CONFIG PANEL -->
+    <section class="panel" aria-labelledby="config-title">
+      <div class="panel__header">
+        <div>
+          <span class="section-label">Configuración de lista</span>
+          <h2 id="config-title">Textos de apertura</h2>
+          @if (interactiveType() !== 'list') {
+            <p class="panel__subtitle">Esta config se conserva y se activará cuando el grupo tenga 4 o más opciones.</p>
+          }
+        </div>
+        <button class="ghost-button ghost-button--sm" type="button" (click)="toggleConfigEditor()">
+          {{ showConfigEditor() ? 'Cerrar' : 'Editar' }}
+        </button>
+      </div>
+
+      @if (!showConfigEditor()) {
+        <dl class="config-summary">
+          <div>
+            <dt>Texto del botón que abre la lista</dt>
+            <dd>{{ groupConfig()?.button_text }} <code>{{ groupConfig()?.button_text_key }}</code></dd>
+          </div>
+          <div>
+            <dt>Título de sección</dt>
+            <dd>{{ groupConfig()?.section_title }} <code>{{ groupConfig()?.section_title_key }}</code></dd>
+          </div>
+        </dl>
+      } @else {
+        <form [formGroup]="configForm" (ngSubmit)="saveConfig()" class="option-form">
+          <div class="form-grid">
+            <label class="field" for="cfg-btn-key">
+              <span>Clave de texto de botón <abbr title="Requerido">*</abbr></span>
+              <select id="cfg-btn-key" formControlName="button_text_key">
+                <option value="">— Seleccioná una clave —</option>
+                @for (msg of buttonTextKeyMessages(); track msg.key) {
+                  <option [value]="msg.key">{{ msgLabel(msg) }}</option>
+                }
+              </select>
+              <small class="field__hint">Tipo button_text, máx 20 caracteres.</small>
+            </label>
+            <label class="field" for="cfg-sec-key">
+              <span>Clave de título de sección <abbr title="Requerido">*</abbr></span>
+              <select id="cfg-sec-key" formControlName="section_title_key">
+                <option value="">— Seleccioná una clave —</option>
+                @for (msg of sectionTitleKeyMessages(); track msg.key) {
+                  <option [value]="msg.key">{{ msgLabel(msg) }}</option>
+                }
+              </select>
+              <small class="field__hint">Tipo list_section_title, máx 24 caracteres.</small>
+            </label>
+          </div>
+          <div class="form-actions">
+            <button class="primary-button" type="submit" [disabled]="configForm.invalid || isSaving()">
+              {{ isSaving() ? 'Guardando...' : 'Guardar configuración' }}
+            </button>
+            <button class="ghost-button" type="button" (click)="toggleConfigEditor()">Cancelar</button>
+          </div>
+        </form>
+      }
+    </section>
+
+    <!-- OPTIONS LIST -->
+    <section class="panel" aria-labelledby="options-title">
+      <div class="panel__header">
+        <div>
+          <span class="section-label">Opciones</span>
+          <h2 id="options-title">Lista de opciones</h2>
+        </div>
+        <button
+          class="primary-button primary-button--sm"
+          type="button"
+          [disabled]="options().length >= 10 || isSaving()"
+          (click)="startNewOption()"
+        >
+          + Nueva opción
+        </button>
+      </div>
+
+      @if (options().length >= 10) {
+        <p class="inline-hint">Máximo 10 opciones alcanzado. Eliminá una para poder agregar.</p>
+      }
+
+      <ul class="option-list" role="list">
+        @for (opt of options(); track opt.option_id) {
+          <li class="option-item" [class.option-item--editing]="editingOptionId() === opt.option_id">
+            <div class="option-item__header">
+              <div class="option-item__meta">
+                <span class="option-item__orden" aria-hidden="true">#{{ opt.orden }}</span>
+                <div class="option-item__ids">
+                  <code class="option-item__id">{{ opt.option_id }}</code>
+                  <code class="option-item__key">{{ opt.title_key }}</code>
+                </div>
+              </div>
+              <div class="option-item__actions">
+                <button
+                  class="ghost-button ghost-button--sm"
+                  type="button"
+                  (click)="editingOptionId() === opt.option_id ? cancelOptionEdit() : startEditOption(opt)"
+                >
+                  {{ editingOptionId() === opt.option_id ? 'Cerrar' : 'Editar' }}
+                </button>
+                @if (confirmDeleteId() !== opt.option_id) {
+                  <button
+                    class="danger-button danger-button--sm"
+                    type="button"
+                    [disabled]="options().length <= 1"
+                    (click)="requestDelete(opt.option_id)"
+                    [attr.title]="options().length <= 1 ? 'No se puede eliminar la última opción' : null"
+                  >
+                    Eliminar
+                  </button>
+                }
+              </div>
+            </div>
+
+            <div class="option-item__body">
+              <p class="option-item__title">{{ opt.title }}</p>
+              <div class="option-item__tags">
+                @if (opt.stay_in_state) {
+                  <span class="badge badge--stay">Permanecer en estado</span>
+                } @else {
+                  <span class="badge badge--go">→ {{ opt.target_state ?? 'sin destino' }}</span>
+                }
+                @if (opt.reply_key) {
+                  <span class="badge">reply: <code>{{ opt.reply_key }}</code></span>
+                }
+                @if (opt.target_substep_key) {
+                  <span class="badge">substep: {{ opt.target_substep_key }}={{ opt.target_substep_value }}</span>
+                }
+              </div>
+            </div>
+
+            @if (confirmDeleteId() === opt.option_id) {
+              <div class="confirm-box">
+                <p>
+                  ¿Eliminar <strong>{{ opt.option_id }}</strong>?
+                  @if (deleteWillChangeType()) {
+                    <span class="confirm-box__warn"> El grupo pasará de lista a botones.</span>
+                  }
+                </p>
+                <div class="confirm-box__actions">
+                  <button class="danger-button" type="button" [disabled]="isSaving()" (click)="confirmDelete()">
+                    {{ isSaving() ? 'Eliminando...' : 'Sí, eliminar' }}
+                  </button>
+                  <button class="ghost-button" type="button" (click)="cancelDelete()">Cancelar</button>
+                </div>
+              </div>
+            }
+          </li>
+        }
+
+        @if (!options().length) {
+          <li class="empty-state">No hay opciones. Agregá la primera con el botón de arriba.</li>
+        }
+      </ul>
+    </section>
+
+    <!-- OPTION EDITOR PANEL -->
+    @if (editingOptionId() !== null) {
+      <section class="panel panel--editor" aria-labelledby="editor-title">
+        <div class="panel__header">
+          <div>
+            <span class="section-label">{{ isEditingNew() ? 'Nueva opción' : 'Editar opción' }}</span>
+            <h2 id="editor-title">
+              @if (isEditingNew()) { Crear opción } @else { {{ editingOptionId() }} }
+            </h2>
+          </div>
+          <button class="ghost-button ghost-button--sm" type="button" (click)="cancelOptionEdit()">Cancelar</button>
+        </div>
+
+        <form [formGroup]="optionForm" (ngSubmit)="saveOption()" class="option-form">
+
+          <!-- ID AND ORDER -->
+          <div class="form-grid">
+            <label class="field" for="opt-id">
+              <span>ID de la opción <abbr title="Requerido">*</abbr></span>
+              <input
+                id="opt-id"
+                type="text"
+                formControlName="option_id"
+                placeholder="ej: volver_inicio"
+              />
+              <small class="field__hint">Solo minúsculas, números y guiones bajos. No editable luego de crear.</small>
+            </label>
+            <label class="field" for="opt-orden">
+              <span>Orden <abbr title="Requerido">*</abbr></span>
+              <input id="opt-orden" type="number" formControlName="orden" min="0" />
+              <small class="field__hint">El seed usa múltiplos de 10 para dejar espacio.</small>
+            </label>
+          </div>
+
+          <!-- TITLE KEYS -->
+          <div class="form-grid">
+            <label class="field" for="opt-title-key">
+              <span>Clave de título (title_key) <abbr title="Requerido">*</abbr></span>
+              <select id="opt-title-key" formControlName="title_key">
+                <option value="">— Seleccioná una clave —</option>
+                @for (msg of titleKeyMessages(); track msg.key) {
+                  <option [value]="msg.key">{{ msgLabel(msg) }}</option>
+                }
+              </select>
+              <small class="field__hint">Tipos: list_row_title o button — máx 24 chars.</small>
+            </label>
+            <label class="field" for="opt-btn-title-key">
+              <span>Clave de botón corta (button_title_key)</span>
+              <select id="opt-btn-title-key" formControlName="button_title_key">
+                <option value="">— Ninguna (opcional) —</option>
+                @for (msg of buttonTitleKeyMessages(); track msg.key) {
+                  <option [value]="msg.key">{{ msgLabel(msg) }}</option>
+                }
+              </select>
+              <small class="field__hint">Tipo button — máx 20 chars. Requerida si título &gt; 20.</small>
+            </label>
+          </div>
+
+          <label class="field" for="opt-desc-key">
+            <span>Clave de descripción (description_key)</span>
+            <select id="opt-desc-key" formControlName="description_key">
+              <option value="">— Ninguna (opcional) —</option>
+              @for (msg of descriptionKeyMessages(); track msg.key) {
+                <option [value]="msg.key">{{ msgLabel(msg) }}</option>
+              }
+            </select>
+            <small class="field__hint">Tipo list_row_description — máx 72 chars. Solo visible en modo lista.</small>
+          </label>
+
+          <!-- NAVIGATION MODE -->
+          <fieldset class="toggle-fieldset">
+            <legend>Modo de navegación</legend>
+            <div class="toggle-options">
+              <label class="toggle-option" [class.toggle-option--active]="!stayInState()">
+                <input type="radio" formControlName="stay_in_state" [value]="false" />
+                <span>
+                  <strong>Ir a otro estado</strong>
+                  <small>El usuario avanza a un estado diferente del flujo</small>
+                </span>
+              </label>
+              <label class="toggle-option" [class.toggle-option--active]="stayInState()">
+                <input type="radio" formControlName="stay_in_state" [value]="true" />
+                <span>
+                  <strong>Permanecer y cambiar paso</strong>
+                  <small>El usuario queda en el mismo estado, cambia de substep</small>
+                </span>
+              </label>
+            </div>
+          </fieldset>
+
+          <!-- GO TO STATE fields -->
+          @if (!stayInState()) {
+            <div class="form-grid">
+              <label class="field" for="opt-target-state">
+                <span>Estado destino <abbr title="Requerido">*</abbr></span>
+                <select id="opt-target-state" formControlName="target_state">
+                  <option value="">— Seleccioná un estado —</option>
+                  @for (state of flowStates(); track state.state_name) {
+                    <option [value]="state.state_name">{{ state.state_name }}</option>
+                  }
+                </select>
+              </label>
+              <label class="field" for="opt-reply-key-go">
+                <span>Reply key (override opcional)</span>
+                <select id="opt-reply-key-go" formControlName="reply_key">
+                  <option value="">— Ninguna (usa prompt del destino) —</option>
+                  @for (msg of replyKeyMessages(); track msg.key) {
+                    <option [value]="msg.key">{{ msgLabel(msg) }}</option>
+                  }
+                </select>
+                <small class="field__hint">Tipo text. Sobrescribe el mensaje del estado destino.</small>
+              </label>
+            </div>
+            @if (isSoporteTarget()) {
+              <div class="info-box info-box--warning">
+                <strong>EstadoSoporte detectado</strong>
+                <p>Se completaron automáticamente reply_key (<code>handoff_text</code>) y extra_flags (<code>&#123;"handoff": true&#125;</code>). Podés cambiarlos si es necesario.</p>
+              </div>
+            }
+          }
+
+          <!-- STAY IN STATE fields -->
+          @if (stayInState()) {
+            <div class="form-grid">
+              <label class="field" for="opt-reply-key-stay">
+                <span>Reply key <abbr title="Requerido">*</abbr></span>
+                <select id="opt-reply-key-stay" formControlName="reply_key">
+                  <option value="">— Seleccioná una clave —</option>
+                  @for (msg of replyKeyMessages(); track msg.key) {
+                    <option [value]="msg.key">{{ msgLabel(msg) }}</option>
+                  }
+                </select>
+                <small class="field__hint">Mensaje que el bot envía antes de procesar el substep.</small>
+              </label>
+              <label class="field" for="opt-substep-key">
+                <span>Clave de substep <abbr title="Requerido">*</abbr></span>
+                <input id="opt-substep-key" type="text" formControlName="target_substep_key" placeholder="ej: login_step" />
+              </label>
+            </div>
+            <label class="field" for="opt-substep-val">
+              <span>Valor de substep <abbr title="Requerido">*</abbr></span>
+              <input id="opt-substep-val" type="text" formControlName="target_substep_value" placeholder="ej: pregunta_cuando" />
+            </label>
+          }
+
+          <!-- ADVANCED -->
+          <details class="advanced-section">
+            <summary>Avanzado: target_vars / extra_flags (JSON)</summary>
+            <div class="form-grid" style="margin-top: 0.75rem">
+              <label class="field" for="opt-target-vars">
+                <span>target_vars (JSON objeto)</span>
+                <textarea id="opt-target-vars" formControlName="target_vars_json" rows="3" placeholder='{"login_step": 0, "flujo": "registro"}'></textarea>
+                <small class="field__hint">Variables de contexto que se aplican antes de enrutar. Debe ser un objeto, no array ni escalar.</small>
+              </label>
+              <label class="field" for="opt-extra-flags">
+                <span>extra_flags (JSON objeto)</span>
+                <textarea id="opt-extra-flags" formControlName="extra_flags_json" rows="3" placeholder='{"handoff": true}'></textarea>
+                @if (isSoporteTarget()) {
+                  <small class="field__hint field__hint--warning">EstadoSoporte requiere: <code>&#123;"handoff": true&#125;</code></small>
+                }
+              </label>
+            </div>
+          </details>
+
+          <div class="form-actions">
+            <button class="primary-button" type="submit" [disabled]="isSaving()">
+              {{ isSaving() ? 'Guardando...' : (isEditingNew() ? 'Crear opción' : 'Guardar cambios') }}
+            </button>
+            <button class="ghost-button" type="button" (click)="cancelOptionEdit()">Cancelar</button>
+          </div>
+        </form>
+      </section>
+    }
+
+  }
+</section>

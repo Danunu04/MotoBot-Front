@@ -45,6 +45,22 @@ export const routes: Routes = [
       import('./editor-mensajes/editor-mensajes').then((module) => module.EditorMensajes),
   },
   {
+    path: 'editor-opciones',
+    title: 'Editor de opciones',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./editor-opciones/editor-opciones').then((module) => module.EditorOpciones),
+  },
+  {
+    path: 'editor-opciones/:group',
+    title: 'Editor de grupo de opciones',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./editor-opciones-detalle/editor-opciones-detalle').then(
+        (module) => module.EditorOpcionesDetalle,
+      ),
+  },
+  {
     path: '**',
     redirectTo: 'home',
   },
