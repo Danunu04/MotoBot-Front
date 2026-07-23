@@ -244,7 +244,7 @@
 
     <!-- OPTION EDITOR PANEL -->
     @if (editingOptionId() !== null) {
-      <section class="panel panel--editor" aria-labelledby="editor-title">
+      <section id="option-editor-panel" class="panel panel--editor" aria-labelledby="editor-title">
         <div class="panel__header">
           <div>
             <span class="section-label">{{ isEditingNew() ? 'Nueva opción' : 'Editar opción' }}</span>

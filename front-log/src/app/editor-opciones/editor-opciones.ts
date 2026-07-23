@@ -6,11 +6,12 @@ import {
   signal,
 } from '@angular/core';
 import { Router } from '@angular/router';
+import { forkJoin } from 'rxjs';
 import {
   BotOptionsService,
   OptionGroupSummary,
 } from '../shared/bot-options.service';
-import { extractApiError } from '../shared/bot-messages.service';
+import { BotMessagesService, extractApiError } from '../shared/bot-messages.service';
 
 @Component({
   selector: 'app-editor-opciones',
@@ -21,14 +22,16 @@ import { extractApiError } from '../shared/bot-messages.service';
 })
 export class EditorOpciones implements OnInit {
   private readonly service = inject(BotOptionsService);
+  private readonly messagesService = inject(BotMessagesService);
   private readonly router = inject(Router);
 
   protected readonly groups = signal<readonly OptionGroupSummary[]>([]);
+  protected readonly messageMap = signal<ReadonlyMap<string, string>>(new Map());
   protected readonly isLoading = signal(false);
   protected readonly errorMessage = signal('');
 
   ngOnInit(): void {
-    this.loadGroups();
+    this.loadData();
   }
 
   protected goToGroup(group: string): void {
@@ -41,12 +44,25 @@ export class EditorOpciones implements OnInit {
     return 'Sin opciones';
   }
 
-  private loadGroups(): void {
+  protected formatGroupName(name: string): string {
+    const s = name.replace(/_/g, ' ');
+    return s.charAt(0).toUpperCase() + s.slice(1);
+  }
+
+  protected resolvedText(key: string): string {
+    return this.messageMap().get(key) ?? '';
+  }
+
+  private loadData(): void {
     this.isLoading.set(true);
     this.errorMessage.set('');
-    this.service.getGroups().subscribe({
-      next: (groups) => {
+    forkJoin([
+      this.service.getGroups(),
+      this.messagesService.getMessages(),
+    ]).subscribe({
+      next: ([groups, msgs]) => {
         this.groups.set(groups);
+        this.messageMap.set(new Map(msgs.map((m) => [m.key, m.content])));
         this.isLoading.set(false);
       },
       error: (err: unknown) => {

@@ -165,30 +165,68 @@
                     <p class="alert alert--error" role="alert">No se pudo guardar. Intentá de nuevo.</p>
                   }
 
-                  <div class="message-card__actions">
-                    <button
-                      class="ghost-button"
-                      type="button"
-                      (click)="restore(msg)"
-                      [disabled]="savingKey() === msg.key"
-                    >
-                      Restaurar
-                    </button>
+                  @if (confirmDeleteKey() === msg.key) {
+                    <div class="delete-confirm" role="alert">
+                      <p>¿Eliminar "<strong>{{ msg.label }}</strong>"? Esta acción no se puede deshacer.</p>
+                      <div class="delete-confirm__actions">
+                        <button
+                          class="ghost-button"
+                          type="button"
+                          (click)="cancelDelete()"
+                          [disabled]="deleting()"
+                        >
+                          Cancelar
+                        </button>
+                        <button
+                          class="danger-button"
+                          type="button"
+                          (click)="confirmDelete(msg)"
+                          [disabled]="deleting()"
+                        >
+                          @if (deleting()) {
+                            <span class="spinner" aria-hidden="true"></span>
+                            Eliminando...
+                          } @else {
+                            Sí, eliminar
+                          }
+                        </button>
+                      </div>
+                    </div>
+                  } @else {
+                    <div class="message-card__actions">
+                      <button
+                        class="ghost-button ghost-button--danger"
+                        type="button"
+                        (click)="requestDelete(msg.key)"
+                        [disabled]="savingKey() === msg.key"
+                      >
+                        Eliminar
+                      </button>
 
-                    <button
-                      class="primary-button"
-                      type="button"
-                      (click)="save(msg)"
-                      [disabled]="savingKey() === msg.key || isOver(msg.key, msg.content, msg.type)"
-                    >
-                      @if (savingKey() === msg.key) {
-                        <span class="spinner" aria-hidden="true"></span>
-                        Guardando...
-                      } @else {
-                        Guardar
-                      }
-                    </button>
-                  </div>
+                      <button
+                        class="ghost-button"
+                        type="button"
+                        (click)="restore(msg)"
+                        [disabled]="savingKey() === msg.key"
+                      >
+                        Restaurar
+                      </button>
+
+                      <button
+                        class="primary-button"
+                        type="button"
+                        (click)="save(msg)"
+                        [disabled]="savingKey() === msg.key || isOver(msg.key, msg.content, msg.type)"
+                      >
+                        @if (savingKey() === msg.key) {
+                          <span class="spinner" aria-hidden="true"></span>
+                          Guardando...
+                        } @else {
+                          Guardar
+                        }
+                      </button>
+                    </div>
+                  }
                 </article>
 
                 <button
@@ -206,151 +244,157 @@
 
           <!-- ── ALTA DE NUEVO MENSAJE EN ESTE FLUJO ──────────────────────── -->
           <section
+            id="create-panel"
             class="panel create-panel"
             [class.create-panel--anchored]="insertAnchorIndex() !== null"
             aria-labelledby="create-title"
           >
-            <div class="panel__header">
-              <div>
+            @if (insertAnchorIndex() === null) {
+              <div class="create-panel__hint">
                 <span class="section-label">Nuevo mensaje</span>
-                <h2 id="create-title">{{ insertPositionLabel() }}</h2>
+                <p>Hacé click en un <strong>+</strong> entre los mensajes para agregar uno en esa posición.</p>
               </div>
-              @if (insertAnchorIndex() !== null) {
+            } @else {
+              <div class="panel__header">
+                <div>
+                  <span class="section-label">Nuevo mensaje</span>
+                  <h2 id="create-title">{{ insertPositionLabel() }}</h2>
+                </div>
                 <button
                   class="ghost-button ghost-button--small"
                   type="button"
                   (click)="cancelInsert()"
                 >
-                  Cancelar posición
-                </button>
-              }
-            </div>
-
-            <article class="message-card">
-              <div class="field">
-                <span>Tipo de mensaje</span>
-                <select
-                  id="new-type"
-                  [value]="newType()"
-                  (change)="updateNewType(typeSelect.value)"
-                  #typeSelect
-                >
-                  @for (type of messageTypes; track type) {
-                    <option [value]="type">{{ typeLabels[type] }}</option>
-                  }
-                </select>
-              </div>
-
-              <label class="field" for="new-key">
-                <span>Clave (message_key)</span>
-                <input
-                  id="new-key"
-                  type="text"
-                  class="text-input"
-                  placeholder="ej: bienvenida_nueva"
-                  [value]="newKey()"
-                  (input)="updateNewKey(keyInput.value)"
-                  #keyInput
-                />
-              </label>
-
-              <label class="field" for="new-flow-id">
-                <span>Identificación en el flujo</span>
-                <input
-                  id="new-flow-id"
-                  type="text"
-                  class="text-input"
-                  placeholder="ej: registroFormulario"
-                  [value]="newFlujoIdentificacionMensaje()"
-                  (input)="updateNewFlujoIdentificacionMensaje(flowIdInput.value)"
-                  #flowIdInput
-                />
-              </label>
-
-              <label class="field" for="new-state">
-                <span>Estado técnico (opcional)</span>
-                <input
-                  id="new-state"
-                  type="text"
-                  class="text-input"
-                  placeholder="ej: EstadoInicial"
-                  [value]="newStateName()"
-                  (input)="updateNewStateName(stateInput.value)"
-                  #stateInput
-                />
-              </label>
-
-              <label class="field" for="new-label">
-                <span>Etiqueta</span>
-                <input
-                  id="new-label"
-                  type="text"
-                  class="text-input"
-                  placeholder="Nombre visible del mensaje"
-                  [value]="newLabel()"
-                  (input)="updateNewLabel(labelInput.value)"
-                  #labelInput
-                />
-              </label>
-
-              <label class="field" for="new-content">
-                <div class="btn-field-header">
-                  <span>Contenido</span>
-                  <span
-                    class="char-counter"
-                    [class.char-counter--over]="newContent().trim().length > limits[newType()]"
-                    aria-live="polite"
-                  >{{ newContent().trim().length }}/{{ limits[newType()] }}</span>
-                </div>
-                <textarea
-                  id="new-content"
-                  class="message-textarea"
-                  rows="4"
-                  [value]="newContent()"
-                  (input)="updateNewContent(contentInput.value)"
-                  #contentInput
-                ></textarea>
-              </label>
-
-              <label class="field" for="new-default">
-                <div class="btn-field-header">
-                  <span>Contenido por defecto (opcional)</span>
-                  <span
-                    class="char-counter"
-                    [class.char-counter--over]="newDefaultContent().trim().length > limits[newType()]"
-                    aria-live="polite"
-                  >{{ newDefaultContent().trim().length }}/{{ limits[newType()] }}</span>
-                </div>
-                <textarea
-                  id="new-default"
-                  class="message-textarea"
-                  rows="3"
-                  [value]="newDefaultContent()"
-                  (input)="updateNewDefaultContent(defaultInput.value)"
-                  #defaultInput
-                ></textarea>
-              </label>
-
-              @if (createError()) {
-                <p class="alert alert--error" role="alert">{{ createError() }}</p>
-              }
-
-              <div class="message-card__actions">
-                <button
-                  class="primary-button"
-                  type="button"
-                  (click)="createMessage()"
-                  [disabled]="creating() || newContent().trim().length > limits[newType()] || newDefaultContent().trim().length > limits[newType()]"
-                >
-                  @if (creating()) {
-                    <span class="spinner" aria-hidden="true"></span>
-                    Agregando...
-                  } @else {
-                    Agregar mensaje
-                  }
+                  Cancelar
                 </button>
               </div>
-            </article>
+
+              <article class="message-card">
+                <div class="field">
+                  <span>Tipo de mensaje</span>
+                  <select
+                    id="new-type"
+                    [value]="newType()"
+                    (change)="updateNewType(typeSelect.value)"
+                    #typeSelect
+                  >
+                    @for (type of messageTypes; track type) {
+                      <option [value]="type">{{ typeLabels[type] }}</option>
+                    }
+                  </select>
+                </div>
+
+                <label class="field" for="new-key">
+                  <span>Clave (message_key)</span>
+                  <input
+                    id="new-key"
+                    type="text"
+                    class="text-input"
+                    placeholder="ej: bienvenida_nueva"
+                    [value]="newKey()"
+                    (input)="updateNewKey(keyInput.value)"
+                    #keyInput
+                  />
+                </label>
+
+                <label class="field" for="new-flow-id">
+                  <span>Identificación en el flujo</span>
+                  <input
+                    id="new-flow-id"
+                    type="text"
+                    class="text-input"
+                    placeholder="ej: registroFormulario"
+                    [value]="newFlujoIdentificacionMensaje()"
+                    (input)="updateNewFlujoIdentificacionMensaje(flowIdInput.value)"
+                    #flowIdInput
+                  />
+                </label>
+
+                <label class="field" for="new-state">
+                  <span>Estado técnico (opcional)</span>
+                  <input
+                    id="new-state"
+                    type="text"
+                    class="text-input"
+                    placeholder="ej: EstadoInicial"
+                    [value]="newStateName()"
+                    (input)="updateNewStateName(stateInput.value)"
+                    #stateInput
+                  />
+                </label>
+
+                <label class="field" for="new-label">
+                  <span>Etiqueta</span>
+                  <input
+                    id="new-label"
+                    type="text"
+                    class="text-input"
+                    placeholder="Nombre visible del mensaje"
+                    [value]="newLabel()"
+                    (input)="updateNewLabel(labelInput.value)"
+                    #labelInput
+                  />
+                </label>
+
+                <label class="field" for="new-content">
+                  <div class="btn-field-header">
+                    <span>Contenido</span>
+                    <span
+                      class="char-counter"
+                      [class.char-counter--over]="newContent().trim().length > limits[newType()]"
+                      aria-live="polite"
+                    >{{ newContent().trim().length }}/{{ limits[newType()] }}</span>
+                  </div>
+                  <textarea
+                    id="new-content"
+                    class="message-textarea"
+                    rows="4"
+                    [value]="newContent()"
+                    (input)="updateNewContent(contentInput.value)"
+                    #contentInput
+                  ></textarea>
+                </label>
+
+                <label class="field" for="new-default">
+                  <div class="btn-field-header">
+                    <span>Contenido por defecto (opcional)</span>
+                    <span
+                      class="char-counter"
+                      [class.char-counter--over]="newDefaultContent().trim().length > limits[newType()]"
+                      aria-live="polite"
+                    >{{ newDefaultContent().trim().length }}/{{ limits[newType()] }}</span>
+                  </div>
+                  <textarea
+                    id="new-default"
+                    class="message-textarea"
+                    rows="3"
+                    [value]="newDefaultContent()"
+                    (input)="updateNewDefaultContent(defaultInput.value)"
+                    #defaultInput
+                  ></textarea>
+                </label>
+
+                @if (createError()) {
+                  <p class="alert alert--error" role="alert">{{ createError() }}</p>
+                }
+
+                <div class="message-card__actions">
+                  <button
+                    class="primary-button"
+                    type="button"
+                    (click)="createMessage()"
+                    [disabled]="creating() || newContent().trim().length > limits[newType()] || newDefaultContent().trim().length > limits[newType()]"
+                  >
+                    @if (creating()) {
+                      <span class="spinner" aria-hidden="true"></span>
+                      Agregando...
+                    } @else {
+                      Agregar mensaje
+                    }
+                  </button>
+                </div>
+              </article>
+            }
           </section>
         } @else {
           <div class="state-box">

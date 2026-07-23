@@ -132,4 +132,8 @@ export class BotMessagesService {
   reorderMessages(orders: readonly ReorderMessagePayload[]): Observable<unknown> {
     return this.http.patch(`${this.apiUrl}/reorder`, { orders });
   }
+
+  deleteMessage(key: string, updatedBy: string): Observable<unknown> {
+    return this.http.delete(`${this.apiUrl}/${key}`, { params: { updated_by: updatedBy } });
+  }
 }

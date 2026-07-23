@@ -29,14 +29,24 @@
         @for (group of groups(); track group.option_group) {
           <li class="group-card" role="listitem">
             <button class="group-card__btn" type="button" (click)="goToGroup(group.option_group)">
-              <div class="group-card__header">
-                <code class="group-card__name">{{ group.option_group }}</code>
+              <div class="group-card__top">
+                <div class="group-card__names">
+                  <span class="group-card__display-name">{{ formatGroupName(group.option_group) }}</span>
+                  <code class="group-card__raw-name">{{ group.option_group }}</code>
+                </div>
                 <span class="badge" [class]="'badge--' + (group.interactive_type ?? 'none')">
                   {{ interactiveLabel(group.interactive_type) }}
                 </span>
               </div>
               <div class="group-card__footer">
-                <span class="group-card__count">{{ group.option_count }} opción(es)</span>
+                <div class="group-card__meta">
+                  @if (resolvedText(group.button_text_key); as btnText) {
+                    <span class="group-card__btn-text" title="Texto del botón en WhatsApp">
+                      <span class="group-card__meta-label">Botón:</span> "{{ btnText }}"
+                    </span>
+                  }
+                  <span class="group-card__count">{{ group.option_count }} opción(es)</span>
+                </div>
                 <svg class="group-card__arrow" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                   <path fill-rule="evenodd" d="M7.21 14.77a.75.75 0 0 1 .02-1.06L11.168 10 7.23 6.29a.75.75 0 1 1 1.04-1.08l4.5 4.25a.75.75 0 0 1 0 1.08l-4.5 4.25a.75.75 0 0 1-1.06-.02z" clip-rule="evenodd"/>
                 </svg>

@@ -232,6 +232,7 @@ export class EditorOpcionesDetalle implements OnInit {
       extra_flags_json: '',
     });
     this.optionForm.get('option_id')!.enable();
+    this.scrollToEditor();
   }
 
   protected startEditOption(opt: OptionBinding): void {
@@ -257,12 +258,19 @@ export class EditorOpcionesDetalle implements OnInit {
       extra_flags_json: opt.extra_flags ?? '',
     });
     this.optionForm.get('option_id')!.disable();
+    this.scrollToEditor();
   }
 
   protected cancelOptionEdit(): void {
     this.editingOptionId.set(null);
     this.actionMessage.set('');
     this.optionForm.get('option_id')!.enable();
+  }
+
+  private scrollToEditor(): void {
+    globalThis.setTimeout(() => {
+      globalThis.document.getElementById('option-editor-panel')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 60);
   }
 
   protected saveOption(): void {

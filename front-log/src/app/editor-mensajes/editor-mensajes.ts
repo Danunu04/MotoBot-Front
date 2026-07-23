@@ -180,6 +180,8 @@ export class EditorMensajes {
 
   protected readonly reordering = signal(false);
   protected readonly insertAnchorIndex = signal<number | null>(null);
+  protected readonly confirmDeleteKey = signal<string | null>(null);
+  protected readonly deleting = signal(false);
 
   protected readonly messageTypes = ALL_MESSAGE_TYPES;
   protected readonly typeLabels = MESSAGE_TYPE_LABELS;
@@ -318,6 +320,35 @@ export class EditorMensajes {
     });
   }
 
+  protected requestDelete(key: string): void {
+    this.confirmDeleteKey.set(key);
+  }
+
+  protected cancelDelete(): void {
+    this.confirmDeleteKey.set(null);
+  }
+
+  protected confirmDelete(msg: BotMessage): void {
+    if (this.deleting()) return;
+    this.deleting.set(true);
+    this.botMessagesService.deleteMessage(msg.key, this.updatedBy()).subscribe({
+      next: () => {
+        this.deleting.set(false);
+        this.confirmDeleteKey.set(null);
+        this.messages.update((current) => current.filter((m) => m.key !== msg.key));
+        this.editedContent.update((current) => {
+          const next = { ...current };
+          delete next[msg.key];
+          return next;
+        });
+      },
+      error: () => {
+        this.deleting.set(false);
+        this.showFeedback(msg.key, 'error');
+      },
+    });
+  }
+
   protected restore(msg: BotMessage): void {
     const confirmed = globalThis.confirm(
       `¿Restaurar "${msg.label}" al texto por defecto? Esta acción no guarda automáticamente.`,
@@ -361,6 +392,9 @@ export class EditorMensajes {
   protected startInsertAt(index: number | null): void {
     this.insertAnchorIndex.set(index);
     this.createError.set('');
+    globalThis.setTimeout(() => {
+      globalThis.document.getElementById('create-panel')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 60);
   }
 
   protected cancelInsert(): void {
