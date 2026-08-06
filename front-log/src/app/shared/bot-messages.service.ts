@@ -1,18 +1,15 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
-import { Observable, map } from 'rxjs';
+import { Observable, forkJoin } from 'rxjs';
+import { map } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
 
-export type BotMessageType = 'text' | 'button' | 'button_text' | 'list_row_title' | 'list_row_description' | 'list_section_title';
-
-export function extractApiError(err: unknown): string {
-  if (err && typeof err === 'object' && 'error' in err) {
-    const e = (err as { error: unknown }).error;
-    if (e && typeof e === 'object' && 'detail' in e) return String((e as { detail: unknown }).detail);
-  }
-  if (err && typeof err === 'object' && 'message' in err) return String((err as { message: unknown }).message);
-  return 'Error desconocido.';
-}
+export type BotMessageType =
+  | 'text'
+  | 'button'
+  | 'button_text'
+  | 'list_row_title'
+  | 'list_row_description';
 
 export interface BotMessage {
   readonly key: string;
@@ -21,8 +18,11 @@ export interface BotMessage {
   readonly label: string;
   readonly content: string;
   readonly default_content: string;
-  readonly type: BotMessageType;
+  readonly type: string;
   readonly orden: number;
+  readonly id?: string;
+  readonly description?: string;
+  readonly default_description?: string;
 }
 
 export interface CreateMessagePayload {
@@ -48,7 +48,6 @@ export const MESSAGE_LIMITS: Readonly<Record<BotMessageType, number>> = {
   button_text: 2000,
   list_row_title: 24,
   list_row_description: 72,
-  list_section_title: 24,
 };
 
 export const MESSAGE_TYPE_LABELS: Readonly<Record<BotMessageType, string>> = {
@@ -57,7 +56,6 @@ export const MESSAGE_TYPE_LABELS: Readonly<Record<BotMessageType, string>> = {
   button_text: 'Texto de botón',
   list_row_title: 'Título de fila',
   list_row_description: 'Descripción de fila',
-  list_section_title: 'Título de sección',
 };
 
 interface MessagesApiResponse {
@@ -84,6 +82,12 @@ interface ApiMessage {
  *
  * GET /messages
  *   Response: { ok: true, messages: ApiMessage[] }
+ *   Backend types mapeados al frontend:
+ *     list_row_title        → list_row   (title + descripción embebida del list_row_description par)
+ *     list_row_description  → filtrado   (embebido en el list_row correspondiente)
+ *     button_text           → list_button
+ *     list_section_title    → filtrado   (sin UI en el editor)
+ *     text / button         → igual
  *
  * PUT /messages/{key}
  *   Body: { content: string, updated_by: string }
@@ -96,6 +100,9 @@ interface ApiMessage {
  * PATCH /messages/reorder
  *   Body: { orders: ReorderMessagePayload[] }
  *   Response: { ok: true, updated: number }
+ *
+ * Para list_row: se hacen dos PUT — uno para el título (key) y otro para la
+ * descripción (key con sufijo _title → _description).
  */
 @Injectable({
   providedIn: 'root',
@@ -106,23 +113,71 @@ export class BotMessagesService {
 
   getMessages(): Observable<readonly BotMessage[]> {
     return this.http.get<MessagesApiResponse>(this.apiUrl).pipe(
-      map((response) =>
-        (response.messages ?? []).map((m) => ({
-          key: m.message_key,
-          type: m.message_type,
-          state_name: m.state_name,
-          flujo_identificacion_mensaje: m.flujo_identificacion_mensaje,
-          label: m.label ?? m.message_key,
-          content: m.content,
-          default_content: m.default_content,
-          orden: m.orden ?? 0,
-        })),
-      ),
+      map(({ messages }) => {
+        const descMap = new Map<string, ApiMessage>();
+        for (const m of messages) {
+          if (m.message_type === 'list_row_description') {
+            descMap.set(m.message_key, m);
+          }
+        }
+
+        const SKIP_TYPES = new Set(['list_row_description', 'list_section_title']);
+
+        return (messages ?? [])
+          .filter((m) => !SKIP_TYPES.has(m.message_type))
+          .map((m): BotMessage => {
+            const isListRowTitle = m.message_type === 'list_row_title';
+            const isButtonText = m.message_type === 'button_text';
+            const descKey = isListRowTitle
+              ? m.message_key.replace(/_title$/, '_description')
+              : undefined;
+            const descMsg = descKey ? descMap.get(descKey) : undefined;
+
+            return {
+              key: m.message_key,
+              type: isListRowTitle ? 'list_row' : isButtonText ? 'list_button' : m.message_type,
+              state_name: m.state_name,
+              flujo_identificacion_mensaje: m.flujo_identificacion_mensaje,
+              label: m.label ?? m.message_key,
+              content: m.content,
+              default_content: m.default_content,
+              orden: m.orden ?? 0,
+              ...(descMsg && {
+                description: descMsg.content,
+                default_description: descMsg.default_content,
+              }),
+            };
+          });
+      }),
     );
   }
 
   updateMessage(key: string, content: string, updatedBy: string): Observable<unknown> {
     return this.http.put(`${this.apiUrl}/${key}`, { content, updated_by: updatedBy });
+  }
+
+  updateListRow(
+    key: string,
+    title: string,
+    description: string,
+    updatedBy: string,
+  ): Observable<unknown> {
+    const titleUpdate$ = this.http.put(`${this.apiUrl}/${key}`, {
+      content: title,
+      updated_by: updatedBy,
+    });
+
+    const descKey = key.replace(/_title$/, '_description');
+    if (descKey === key) {
+      return titleUpdate$;
+    }
+
+    const descUpdate$ = this.http.put(`${this.apiUrl}/${descKey}`, {
+      content: description,
+      updated_by: updatedBy,
+    });
+
+    return forkJoin([titleUpdate$, descUpdate$]);
   }
 
   createMessage(payload: CreateMessagePayload): Observable<unknown> {
@@ -131,9 +186,5 @@ export class BotMessagesService {
 
   reorderMessages(orders: readonly ReorderMessagePayload[]): Observable<unknown> {
     return this.http.patch(`${this.apiUrl}/reorder`, { orders });
-  }
-
-  deleteMessage(key: string, updatedBy: string): Observable<unknown> {
-    return this.http.delete(`${this.apiUrl}/${key}`, { params: { updated_by: updatedBy } });
   }
 }

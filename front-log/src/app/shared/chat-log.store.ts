@@ -158,6 +158,11 @@ export class ChatLogStore {
         if (Array.isArray(logs)) {
           return parsed as ChatLogEnvelope;
         }
+
+        // Backend devuelve {"ok":false,"message":"..."} cuando no hay logs todavía
+        if (Reflect.get(parsed, 'ok') === false) {
+          return { ok: false, source: 'empty', logs: [] };
+        }
       }
     } catch {
       return null;
