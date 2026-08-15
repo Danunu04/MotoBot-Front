@@ -1,0 +1,144 @@
+<article
+  class="conversation-option"
+  [class.conversation-option--locked]="!option().editable"
+  [class.conversation-option--history-button]="appearance() === 'history-button'"
+  [class.conversation-option--history-list]="appearance() === 'history-list'"
+>
+  <header class="conversation-option__header">
+    <div>
+      <strong>{{ displayTitle() }}</strong>
+      @if (blockFormat() === 'lista') {
+        <p>{{ option().descripcion || 'Sin descripción' }}</p>
+      }
+    </div>
+
+    @if (option().editable) {
+      <div class="conversation-option__actions">
+        <button
+          type="button"
+          class="text-action"
+          (click)="showEditor.set(!showEditor())"
+          [disabled]="readonlyView()"
+        >
+          {{ showEditor() ? 'Cerrar edición' : 'Editar opción' }}
+        </button>
+        <button
+          type="button"
+          class="delete-action"
+          (click)="requestDelete()"
+          [disabled]="readonlyView()"
+        >
+          Eliminar
+        </button>
+      </div>
+    } @else if (option().sintetica) {
+      <span class="locked-badge">No editable</span>
+    }
+  </header>
+
+  @if (conditionalDestination() && option().lleva_a; as destination) {
+    @if (destination.es_condicional) {
+      <div class="conditional-route">
+        <strong>Este botón lleva a distintos lugares según lo que la persona haya elegido antes en el menú:</strong>
+        <ul>
+          @for (possible of destination.destinos_posibles; track possible.block_id) {
+            <li>
+              <span>{{ possible.condicion }}</span>
+              <button type="button" class="destination-link" (click)="navigateTo.emit(possible.block_id)">
+                {{ possible.label }}
+              </button>
+            </li>
+          }
+        </ul>
+      </div>
+    }
+  } @else if (option().lleva_a; as destination) {
+    <p class="destination">
+      <span>Lleva a:</span>
+      @if (simpleDestinationBlockId(); as targetBlock) {
+        <button type="button" class="destination-link" (click)="navigateTo.emit(targetBlock)">
+          {{ destination.label }}
+        </button>
+      } @else {
+        <strong>{{ destination.label }}</strong>
+      }
+    </p>
+  }
+
+  @if (showEditor() && option().editable && !readonlyView()) {
+    <div class="option-editor">
+      <app-mensaje-editable
+        appearance="compact"
+        [message]="titleMessage()"
+        [updatedBy]="updatedBy()"
+        contextLabel="Texto de la opción"
+        [disabled]="readonlyView()"
+        (contentChanged)="relayChange($event)"
+        (restored)="reloadRequested.emit()"
+      />
+
+      @if (alternateTitleMessage(); as alternateTitle) {
+        <app-mensaje-editable
+          appearance="compact"
+          [message]="alternateTitle"
+          [updatedBy]="updatedBy()"
+          [contextLabel]="alternateTitle.label"
+          [disabled]="readonlyView()"
+          (contentChanged)="relayChange($event)"
+          (restored)="reloadRequested.emit()"
+        />
+      }
+
+      @if (descriptionMessage(); as description) {
+        <app-mensaje-editable
+          appearance="compact"
+          [message]="description"
+          [updatedBy]="updatedBy()"
+          contextLabel="Descripción de la opción"
+          [disabled]="readonlyView()"
+          (contentChanged)="relayChange($event)"
+          (restored)="reloadRequested.emit()"
+        />
+      }
+
+      <app-respuesta-opcion-control
+        [option]="option()"
+        [blockId]="blockId()"
+        [responses]="responses()"
+        [responseLimit]="responseLimit()"
+        [updatedBy]="updatedBy()"
+        [readonlyView]="readonlyView()"
+        (contentChanged)="relayChange($event)"
+        (reloadRequested)="reloadRequested.emit()"
+        (blockChanged)="blockChanged.emit($event)"
+      />
+    </div>
+  }
+
+  @if (confirmDelete()) {
+    <div class="delete-confirmation" role="alert">
+      @if (changesToButtons()) {
+        <strong>Este cambio también modifica cómo se ve en WhatsApp.</strong>
+        <p>
+          Al quedar 3 opciones, WhatsApp deja de mostrar el botón que abre el listado y vuelve a
+          presentar las opciones como botones sueltos.
+        </p>
+      } @else {
+        <strong>¿Eliminar “{{ displayTitle() }}”?</strong>
+        <p>La opción dejará de aparecer en este momento de la conversación.</p>
+      }
+      <div class="delete-confirmation__actions">
+        <button type="button" class="text-action" (click)="cancelDelete()" [disabled]="deleting()">
+          Cancelar
+        </button>
+        <button type="button" class="confirm-delete" (click)="deleteOption()" [disabled]="deleting()">
+          {{ deleting() ? 'Eliminando…' : 'Sí, eliminar' }}
+        </button>
+      </div>
+    </div>
+  }
+
+  @if (deleteError()) {
+    <p class="error-message" role="alert">No se pudo eliminar la opción. Intentá de nuevo.</p>
+  }
+</article>

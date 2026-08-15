@@ -1,0 +1,197 @@
+:host {
+  display: block;
+}
+
+.conversation-option {
+  display: grid;
+  gap: 0.75rem;
+  border: 1px solid var(--border-subtle);
+  border-radius: 0.85rem;
+  padding: 0.9rem;
+  background: color-mix(in srgb, var(--bg-item), transparent 18%);
+}
+
+.conversation-option--locked {
+  border-color: color-mix(in srgb, var(--accent-blue), transparent 55%);
+}
+
+.conversation-option--history-button {
+  border-color: color-mix(in srgb, var(--accent-blue-bright), transparent 48%);
+  padding: 0.7rem 0.85rem;
+  background: color-mix(in srgb, var(--accent-blue), transparent 88%);
+  color: var(--accent-blue-bright);
+  text-align: center;
+}
+
+.conversation-option--history-button .conversation-option__header {
+  justify-content: center;
+}
+
+.conversation-option--history-list {
+  border: 0;
+  border-bottom: 1px solid var(--border-subtle);
+  border-radius: 0;
+  padding: 0.75rem 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.conversation-option--history-list:last-child {
+  border-bottom: 0;
+}
+
+.conversation-option__header,
+.conversation-option__actions,
+.delete-confirmation__actions {
+  display: flex;
+  align-items: flex-start;
+}
+
+.conversation-option__header {
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.conversation-option__header strong {
+  color: var(--text-primary);
+}
+
+.conversation-option__header p {
+  margin: 0.15rem 0 0;
+  color: var(--text-secondary);
+  font-size: var(--font-size-sm);
+}
+
+.conversation-option__actions,
+.delete-confirmation__actions {
+  gap: 0.45rem;
+}
+
+.text-action,
+.delete-action,
+.confirm-delete,
+.destination-link {
+  border: 0;
+  cursor: pointer;
+  font: inherit;
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+}
+
+.text-action,
+.destination-link {
+  padding: 0.3rem 0.45rem;
+  background: transparent;
+  color: var(--accent-blue-bright);
+}
+
+.destination-link {
+  padding: 0;
+  text-align: left;
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+
+.delete-action,
+.confirm-delete {
+  border-radius: 0.55rem;
+  padding: 0.4rem 0.65rem;
+  background: var(--accent-red-bg);
+  color: var(--accent-red-text);
+}
+
+.locked-badge {
+  border: 1px solid var(--border-subtle);
+  border-radius: 999px;
+  padding: 0.25rem 0.6rem;
+  color: var(--text-secondary);
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+}
+
+.destination {
+  display: flex;
+  gap: 0.4rem;
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: var(--font-size-sm);
+}
+
+.conditional-route {
+  border: 1px solid color-mix(in srgb, var(--accent-blue), transparent 52%);
+  border-radius: 0.75rem;
+  padding: 0.85rem;
+  background: color-mix(in srgb, var(--accent-blue), transparent 90%);
+}
+
+.conditional-route > strong {
+  color: var(--text-primary);
+}
+
+.conditional-route ul {
+  display: grid;
+  gap: 0.5rem;
+  margin: 0.75rem 0 0;
+  padding-left: 1.2rem;
+}
+
+.conditional-route li {
+  color: var(--text-secondary);
+}
+
+.conditional-route li span::after {
+  content: ' → ';
+}
+
+.option-editor {
+  display: grid;
+  gap: 0.9rem;
+  border-top: 1px solid var(--border-subtle);
+  padding-top: 0.9rem;
+}
+
+.no-reply,
+.error-message {
+  margin: 0;
+  font-size: var(--font-size-sm);
+}
+
+.no-reply {
+  color: var(--text-secondary);
+}
+
+.delete-confirmation {
+  border: 1px solid var(--accent-red-border);
+  border-radius: 0.75rem;
+  padding: 0.85rem;
+  background: var(--accent-red-bg);
+}
+
+.delete-confirmation p {
+  margin: 0.35rem 0 0.8rem;
+  color: var(--text-secondary);
+}
+
+.delete-confirmation__actions {
+  justify-content: flex-end;
+}
+
+.error-message {
+  color: var(--accent-red-text);
+}
+
+button:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--border-focus), transparent 35%);
+  outline-offset: 2px;
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+@media (max-width: 640px) {
+  .conversation-option__header {
+    flex-direction: column;
+  }
+}

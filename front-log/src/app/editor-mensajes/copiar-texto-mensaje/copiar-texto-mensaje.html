@@ -1,0 +1,50 @@
+<div class="copy-message">
+  <button
+    type="button"
+    class="copy-message__toggle"
+    [attr.aria-expanded]="open()"
+    [attr.aria-controls]="panelId"
+    [disabled]="disabled()"
+    (click)="toggle()"
+  >
+    Copiar texto de otro mensaje
+  </button>
+  <p class="copy-message__explanation">
+    Copia solamente el texto al campo de edición. No crea un vínculo: después podés cambiarlo sin
+    modificar el mensaje original.
+  </p>
+
+  @if (copiedLabel()) {
+    <p class="copy-message__status" role="status">
+      Texto copiado desde “{{ copiedLabel() }}”. Podés ajustarlo antes de guardar.
+    </p>
+  }
+
+  @if (open()) {
+    <section class="copy-message__panel" [id]="panelId" aria-label="Copiar texto de otro mensaje">
+      <div class="copy-message__panel-heading">
+        <strong>Elegí el texto que querés copiar</strong>
+        <button type="button" (click)="close()">Cerrar</button>
+      </div>
+      <label>
+        <span>Buscar por contenido o descripción</span>
+        <input
+          type="search"
+          [value]="query()"
+          placeholder="Escribí una palabra para filtrar"
+          (input)="updateQuery($event)"
+        />
+      </label>
+      <div class="copy-message__results" aria-label="Mensajes disponibles">
+        @for (message of filteredMessages(); track message.message_key) {
+          <button type="button" (click)="copy(message)">
+            <strong>{{ message.label }}</strong>
+            <span>{{ message.content }}</span>
+          </button>
+        } @empty {
+          <p>No hay mensajes que coincidan con la búsqueda.</p>
+        }
+      </div>
+    </section>
+  }
+</div>

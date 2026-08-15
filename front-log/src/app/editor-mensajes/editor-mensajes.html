@@ -2,406 +2,85 @@
   <header class="hero">
     <div>
       <span class="hero__eyebrow">Configuración</span>
-      <h1>Editor de mensajes</h1>
-      <p>Seleccioná un flujo del bot para editar sus mensajes o agregar nuevos en el orden de la conversación.</p>
+      <h1>Editor de conversación</h1>
+      <p>
+        Revisá cada momento tal como lo encuentra la persona: lo que dice el bot, lo que puede
+        elegir y a dónde continúa.
+      </p>
     </div>
-
-    <button
-      class="ghost-button"
-      type="button"
-      (click)="load()"
-      [disabled]="isLoading()"
-    >
-      Recargar
+    <button type="button" class="secondary-button" (click)="load()" [disabled]="isLoading()">
+      Recargar recorrido
     </button>
   </header>
 
-  <section class="panel" aria-labelledby="editor-config-title">
-    <div class="panel__header">
+  @if (!isLoading() && storage().message; as storageMessage) {
+    <section id="editor-storage-readonly" class="storage-warning" role="status" aria-live="polite">
+      <span class="storage-warning__icon" aria-hidden="true">!</span>
       <div>
-        <span class="section-label">Identificación</span>
-        <h2 id="editor-config-title">¿Quién edita?</h2>
+        <strong>Editor en modo lectura</strong>
+        <p>{{ storageMessage }}</p>
+        <small>Podés revisar todo el recorrido, pero las acciones de edición están deshabilitadas.</small>
       </div>
-    </div>
+    </section>
+  }
 
-    <label class="field" for="updated-by">
-      <span>Editado por</span>
-      <input
-        id="updated-by"
-        type="text"
-        class="text-input"
-        placeholder="Tu nombre o usuario"
-        [value]="updatedBy()"
-        (input)="updateUpdatedBy(updatedByInput.value)"
-        #updatedByInput
-      />
+  <section class="editor-identity" aria-labelledby="editor-identity-title">
+    <div>
+      <span>Identificación</span>
+      <h2 id="editor-identity-title">¿Quién está editando?</h2>
+    </div>
+    <label>
+      <span>Nombre o usuario</span>
+      <input type="text" [formControl]="updatedBy" placeholder="Por ejemplo: Operaciones" />
     </label>
   </section>
 
   @if (isLoading()) {
-    <div class="state-box" role="status">
+    <div class="page-state" role="status">
       <span class="spinner" aria-hidden="true"></span>
-      <p>Cargando mensajes...</p>
+      <p>Cargando el recorrido completo…</p>
     </div>
   } @else if (errorMessage()) {
-    <div class="state-box state-box--error" role="alert">
+    <div class="page-state page-state--error" role="alert">
       <p>{{ errorMessage() }}</p>
-      <button class="ghost-button" type="button" (click)="load()">Reintentar</button>
+      <button type="button" class="secondary-button" (click)="load()">Reintentar</button>
+    </div>
+  } @else if (orderedBlocks().length === 0) {
+    <div class="page-state">
+      <p>No hay momentos configurados para mostrar.</p>
     </div>
   } @else {
-    <div class="flow-layout">
-      <aside class="flow-sidebar" aria-label="Flujos del bot">
-        <div class="flow-sidebar__header">
-          <span class="section-label">Flujos</span>
-          <h2>Recorridos del bot</h2>
-        </div>
+    <div class="editor-layout">
+      <app-recorrido-conversacion-nav
+        [blocks]="orderedBlocks()"
+        [activeBlockId]="activeBlockId()"
+        (blockSelected)="scrollToBlock($event)"
+      />
 
-        <nav class="flow-list" role="list">
-          @for (flow of flows(); track flow.id) {
-            <button
-              class="flow-item"
-              type="button"
-              role="listitem"
-              [class.flow-item--active]="isActiveFlow(flow.id)"
-              [attr.aria-current]="isActiveFlow(flow.id) ? 'page' : null"
-              (click)="selectFlow(flow.id)"
-            >
-              <span class="flow-item__name">{{ flow.name }}</span>
-              <span class="flow-item__count">{{ flow.messageCount }} mensaje{{ flow.messageCount === 1 ? '' : 's' }}</span>
-            </button>
+      <main class="block-list" aria-label="Bloques de la conversación">
+        @for (block of orderedBlocks(); track block.block_id; let index = $index) {
+          @if (isFirstOtherMoment(index)) {
+            <header class="other-moments-heading">
+              <span>Otros momentos</span>
+              <h2>Otros momentos de la conversación</h2>
+              <p>Situaciones que no forman parte del recorrido principal actual.</p>
+            </header>
           }
-        </nav>
-      </aside>
-
-      <section class="flow-main" aria-live="polite">
-        @if (selectedFlow(); as flow) {
-          <header class="section-heading">
-            <div>
-              <span class="hero__eyebrow">{{ flow.id === 'global' ? 'Compartido' : 'Flujo' }}</span>
-              <h2>{{ flow.name }}</h2>
-              <p>{{ flow.description }}</p>
-            </div>
-          </header>
-
-          <section class="panel" [attr.aria-labelledby]="'flow-messages-title'">
-            <div class="panel__header">
-              <div>
-                <span class="section-label">Orden de conversación</span>
-                <h2 id="flow-messages-title">Mensajes del flujo</h2>
-              </div>
-            </div>
-
-            <div
-              cdkDropList
-              class="flow-message-list"
-              [cdkDropListDisabled]="reordering()"
-              (cdkDropListDropped)="drop($event)"
-            >
-              <button
-                class="insert-button"
-                type="button"
-                [class.insert-button--active]="isInsertingAt(-1)"
-                (click)="startInsertAt(-1)"
-                aria-label="Agregar mensaje al inicio del flujo"
-              >
-                +
-              </button>
-
-              @for (msg of selectedFlowMessages(); track msg.key; let i = $index) {
-                <article class="message-card" cdkDrag cdkDragLockAxis="y">
-                  <div class="message-card__header">
-                    <span class="message-card__drag-handle" cdkDragHandle aria-label="Arrastrar para reordenar">
-                      <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                        <circle cx="9" cy="6" r="2" />
-                        <circle cx="15" cy="6" r="2" />
-                        <circle cx="9" cy="12" r="2" />
-                        <circle cx="15" cy="12" r="2" />
-                        <circle cx="9" cy="18" r="2" />
-                        <circle cx="15" cy="18" r="2" />
-                      </svg>
-                    </span>
-                    <div class="message-card__meta">
-                      <strong class="message-card__label">{{ msg.label }}</strong>
-                      <span class="row-id">{{ msg.key }}</span>
-                    </div>
-                    <span class="message-card__order" aria-label="Orden en el flujo">{{ msg.orden }}</span>
-                  </div>
-
-                  <label class="field" [for]="'msg-' + msg.key">
-                    <div class="btn-field-header">
-                      <span>{{ typeLabels[msg.type] }}</span>
-                      <span
-                        class="char-counter"
-                        [class.char-counter--over]="isOver(msg.key, msg.content, msg.type)"
-                        aria-live="polite"
-                      >{{ getContent(msg.key, msg.content).length }}/{{ limits[msg.type] }}</span>
-                    </div>
-                    <textarea
-                      [id]="'msg-' + msg.key"
-                      class="message-textarea"
-                      rows="4"
-                      [value]="getContent(msg.key, msg.content)"
-                      (input)="setContent(msg.key, textarea.value)"
-                      [disabled]="savingKey() === msg.key"
-                      #textarea
-                    ></textarea>
-                  </label>
-
-                  @if (msg.flujo_identificacion_mensaje) {
-                    <span class="flow-id-tag">{{ msg.flujo_identificacion_mensaje }}</span>
-                  }
-
-                  @if (msg.default_content) {
-                    <details class="reference">
-                      <summary>Ver texto por defecto</summary>
-                      <p class="reference__text">{{ msg.default_content }}</p>
-                    </details>
-                  }
-
-                  @if (feedbackMap()[msg.key] === 'success') {
-                    <p class="alert alert--success" role="status">Mensaje actualizado correctamente.</p>
-                  }
-                  @if (feedbackMap()[msg.key] === 'error') {
-                    <p class="alert alert--error" role="alert">No se pudo guardar. Intentá de nuevo.</p>
-                  }
-
-                  @if (confirmDeleteKey() === msg.key) {
-                    <div class="delete-confirm" role="alert">
-                      <p>¿Eliminar "<strong>{{ msg.label }}</strong>"? Esta acción no se puede deshacer.</p>
-                      <div class="delete-confirm__actions">
-                        <button
-                          class="ghost-button"
-                          type="button"
-                          (click)="cancelDelete()"
-                          [disabled]="deleting()"
-                        >
-                          Cancelar
-                        </button>
-                        <button
-                          class="danger-button"
-                          type="button"
-                          (click)="confirmDelete(msg)"
-                          [disabled]="deleting()"
-                        >
-                          @if (deleting()) {
-                            <span class="spinner" aria-hidden="true"></span>
-                            Eliminando...
-                          } @else {
-                            Sí, eliminar
-                          }
-                        </button>
-                      </div>
-                    </div>
-                  } @else {
-                    <div class="message-card__actions">
-                      <button
-                        class="ghost-button ghost-button--danger"
-                        type="button"
-                        (click)="requestDelete(msg.key)"
-                        [disabled]="savingKey() === msg.key"
-                      >
-                        Eliminar
-                      </button>
-
-                      <button
-                        class="ghost-button"
-                        type="button"
-                        (click)="restore(msg)"
-                        [disabled]="savingKey() === msg.key"
-                      >
-                        Restaurar
-                      </button>
-
-                      <button
-                        class="primary-button"
-                        type="button"
-                        (click)="save(msg)"
-                        [disabled]="savingKey() === msg.key || isOver(msg.key, msg.content, msg.type)"
-                      >
-                        @if (savingKey() === msg.key) {
-                          <span class="spinner" aria-hidden="true"></span>
-                          Guardando...
-                        } @else {
-                          Guardar
-                        }
-                      </button>
-                    </div>
-                  }
-                </article>
-
-                <button
-                  class="insert-button"
-                  type="button"
-                  [class.insert-button--active]="isInsertingAt(i)"
-                  (click)="startInsertAt(i)"
-                  [attr.aria-label]="'Agregar mensaje después de ' + msg.label"
-                >
-                  +
-                </button>
-              }
-            </div>
+          <section [id]="domId(block.block_id)" class="block-anchor">
+            <app-bloque-conversacion-card
+              [block]="block"
+              [responses]="responseChoices()"
+              [destinations]="destinationChoices()"
+              [updatedBy]="updatedBy.value"
+              [readonlyView]="!storage().writable"
+              (navigateTo)="scrollToBlock($event)"
+              (contentChanged)="updateResolvedContent($event)"
+              (reloadRequested)="load()"
+              (blockChanged)="replaceBlock($event)"
+            />
           </section>
-
-          <!-- ── ALTA DE NUEVO MENSAJE EN ESTE FLUJO ──────────────────────── -->
-          <section
-            id="create-panel"
-            class="panel create-panel"
-            [class.create-panel--anchored]="insertAnchorIndex() !== null"
-            aria-labelledby="create-title"
-          >
-            @if (insertAnchorIndex() === null) {
-              <div class="create-panel__hint">
-                <span class="section-label">Nuevo mensaje</span>
-                <p>Hacé click en un <strong>+</strong> entre los mensajes para agregar uno en esa posición.</p>
-              </div>
-            } @else {
-              <div class="panel__header">
-                <div>
-                  <span class="section-label">Nuevo mensaje</span>
-                  <h2 id="create-title">{{ insertPositionLabel() }}</h2>
-                </div>
-                <button
-                  class="ghost-button ghost-button--small"
-                  type="button"
-                  (click)="cancelInsert()"
-                >
-                  Cancelar
-                </button>
-              </div>
-
-              <article class="message-card">
-                <div class="field">
-                  <span>Tipo de mensaje</span>
-                  <select
-                    id="new-type"
-                    [value]="newType()"
-                    (change)="updateNewType(typeSelect.value)"
-                    #typeSelect
-                  >
-                    @for (type of messageTypes; track type) {
-                      <option [value]="type">{{ typeLabels[type] }}</option>
-                    }
-                  </select>
-                </div>
-
-                <label class="field" for="new-key">
-                  <span>Clave (message_key)</span>
-                  <input
-                    id="new-key"
-                    type="text"
-                    class="text-input"
-                    placeholder="ej: bienvenida_nueva"
-                    [value]="newKey()"
-                    (input)="updateNewKey(keyInput.value)"
-                    #keyInput
-                  />
-                </label>
-
-                <label class="field" for="new-flow-id">
-                  <span>Identificación en el flujo</span>
-                  <input
-                    id="new-flow-id"
-                    type="text"
-                    class="text-input"
-                    placeholder="ej: registroFormulario"
-                    [value]="newFlujoIdentificacionMensaje()"
-                    (input)="updateNewFlujoIdentificacionMensaje(flowIdInput.value)"
-                    #flowIdInput
-                  />
-                </label>
-
-                <label class="field" for="new-state">
-                  <span>Estado técnico (opcional)</span>
-                  <input
-                    id="new-state"
-                    type="text"
-                    class="text-input"
-                    placeholder="ej: EstadoInicial"
-                    [value]="newStateName()"
-                    (input)="updateNewStateName(stateInput.value)"
-                    #stateInput
-                  />
-                </label>
-
-                <label class="field" for="new-label">
-                  <span>Etiqueta</span>
-                  <input
-                    id="new-label"
-                    type="text"
-                    class="text-input"
-                    placeholder="Nombre visible del mensaje"
-                    [value]="newLabel()"
-                    (input)="updateNewLabel(labelInput.value)"
-                    #labelInput
-                  />
-                </label>
-
-                <label class="field" for="new-content">
-                  <div class="btn-field-header">
-                    <span>Contenido</span>
-                    <span
-                      class="char-counter"
-                      [class.char-counter--over]="newContent().trim().length > limits[newType()]"
-                      aria-live="polite"
-                    >{{ newContent().trim().length }}/{{ limits[newType()] }}</span>
-                  </div>
-                  <textarea
-                    id="new-content"
-                    class="message-textarea"
-                    rows="4"
-                    [value]="newContent()"
-                    (input)="updateNewContent(contentInput.value)"
-                    #contentInput
-                  ></textarea>
-                </label>
-
-                <label class="field" for="new-default">
-                  <div class="btn-field-header">
-                    <span>Contenido por defecto (opcional)</span>
-                    <span
-                      class="char-counter"
-                      [class.char-counter--over]="newDefaultContent().trim().length > limits[newType()]"
-                      aria-live="polite"
-                    >{{ newDefaultContent().trim().length }}/{{ limits[newType()] }}</span>
-                  </div>
-                  <textarea
-                    id="new-default"
-                    class="message-textarea"
-                    rows="3"
-                    [value]="newDefaultContent()"
-                    (input)="updateNewDefaultContent(defaultInput.value)"
-                    #defaultInput
-                  ></textarea>
-                </label>
-
-                @if (createError()) {
-                  <p class="alert alert--error" role="alert">{{ createError() }}</p>
-                }
-
-                <div class="message-card__actions">
-                  <button
-                    class="primary-button"
-                    type="button"
-                    (click)="createMessage()"
-                    [disabled]="creating() || newContent().trim().length > limits[newType()] || newDefaultContent().trim().length > limits[newType()]"
-                  >
-                    @if (creating()) {
-                      <span class="spinner" aria-hidden="true"></span>
-                      Agregando...
-                    } @else {
-                      Agregar mensaje
-                    }
-                  </button>
-                </div>
-              </article>
-            }
-          </section>
-        } @else {
-          <div class="state-box">
-            <p>Seleccioná un flujo del panel lateral para ver y editar sus mensajes.</p>
-          </div>
         }
-      </section>
+      </main>
     </div>
   }
 </section>

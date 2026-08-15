@@ -1,0 +1,109 @@
+<section class="response-control" aria-label="Respuesta adicional del bot">
+  <div class="response-toggle-row">
+    <div>
+      <strong>Respuesta adicional del bot</strong>
+      <span>{{ switchChecked() ? 'Activada' : 'Desactivada' }}</span>
+    </div>
+    <button
+      type="button"
+      class="response-switch"
+      role="switch"
+      [attr.aria-checked]="switchChecked()"
+      [disabled]="readonlyView() || saving()"
+      (click)="requestToggle()"
+    >
+      <span aria-hidden="true"></span>
+      {{ switchChecked() ? 'Sí' : 'No' }}
+    </button>
+  </div>
+
+  @if (confirmation() === 'activar') {
+    <div class="response-confirmation" role="alert">
+      <strong>Agregar una respuesta adicional</strong>
+      <p>
+        El bot va a enviar un mensaje adicional después de esta elección, antes de pasar al
+        siguiente momento. ¿Confirmás?
+      </p>
+      <div>
+        <button type="button" class="secondary-action" (click)="cancelConfirmation()">
+          Cancelar
+        </button>
+        <button type="button" class="primary-action" (click)="confirmEnable()">
+          Sí, agregar respuesta
+        </button>
+      </div>
+    </div>
+  } @else if (confirmation() === 'desactivar' && option().respuesta; as response) {
+    <div class="response-confirmation response-confirmation--danger" role="alert">
+      <strong>Quitar la respuesta adicional</strong>
+      <p>
+        El bot va a dejar de enviar este mensaje después de esta elección.
+        @if (response.compartido) {
+          Esta opción dejará de usarlo, pero se conservará donde todavía está compartido.
+        } @else {
+          El texto actual se va a descartar.
+        }
+        ¿Confirmás?
+      </p>
+      <blockquote>{{ response.content }}</blockquote>
+      @if (response.compartido && sharedBlockNames()) {
+        <small>También se usa en: {{ sharedBlockNames() }}.</small>
+      }
+      <div>
+        <button type="button" class="secondary-action" (click)="cancelConfirmation()" [disabled]="saving()">
+          Cancelar
+        </button>
+        <button type="button" class="danger-action" (click)="confirmDisable()" [disabled]="saving()">
+          {{ saving() ? 'Quitando…' : 'Sí, quitar respuesta' }}
+        </button>
+      </div>
+    </div>
+  }
+
+  @if (option().respuesta; as response) {
+    <app-mensaje-editable
+      appearance="compact"
+      [message]="response"
+      [copyChoices]="responses()"
+      [updatedBy]="updatedBy()"
+      contextLabel="Después, el bot responde"
+      [disabled]="readonlyView()"
+      (contentChanged)="contentChanged.emit($event)"
+      (restored)="reloadRequested.emit()"
+    />
+  } @else {
+    <p class="no-reply">Después de esta elección, el bot no envía un mensaje adicional.</p>
+  }
+
+  @if (addingResponse()) {
+    <form class="response-form" [formGroup]="form" (ngSubmit)="saveResponse()" novalidate>
+      <label class="field">
+        <span>Respuesta del bot</span>
+        <textarea
+          rows="4"
+          formControlName="content"
+          [attr.maxlength]="responseLimit()"
+          placeholder="Escribí el mensaje adicional"
+        ></textarea>
+        @if (contentError()) { <small class="field-error">{{ contentError() }}</small> }
+      </label>
+      <app-copiar-texto-mensaje
+        [messages]="responses()"
+        [disabled]="saving()"
+        (textCopied)="copyResponseText($event)"
+      />
+
+      @if (errorMessage()) { <p class="field-error" role="alert">{{ errorMessage() }}</p> }
+      <div class="response-form__actions">
+        <button type="button" class="secondary-action" (click)="cancelAdding()" [disabled]="saving()">
+          Cancelar
+        </button>
+        <button type="submit" class="primary-action" [disabled]="saving()">
+          {{ saving() ? 'Guardando…' : 'Guardar respuesta' }}
+        </button>
+      </div>
+    </form>
+  } @else if (errorMessage()) {
+    <p class="field-error" role="alert">{{ errorMessage() }}</p>
+  }
+</section>

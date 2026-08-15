@@ -1,0 +1,223 @@
+<section class="legacy-view">
+  <div class="legacy-intro">
+    <span class="section-label">Registro anterior</span>
+    <h2>Historial anterior</h2>
+    <p>Estas conversaciones se guardaron antes del nuevo registro por turnos.</p>
+  </div>
+
+  <section class="stats" aria-label="Resumen">
+    <article class="stat-card">
+      <span>Total histórico</span>
+      <strong>{{ totalMessages() }}</strong>
+    </article>
+
+    <article class="stat-card">
+      <span>Resultados visibles</span>
+      <strong>{{ visibleMessages() }}</strong>
+    </article>
+
+    <article class="stat-card">
+      <span>Chats</span>
+      <strong>{{ sessionCount() }}</strong>
+    </article>
+  </section>
+
+  <section class="panel" aria-labelledby="filtros-title">
+    <div class="panel__header w-full">
+      <div>
+        <span class="section-label">Filtros</span>
+        <h2 id="filtros-title">Explorar historial</h2>
+      </div>
+
+      <button
+        class="ghost-button"
+        type="button"
+        (click)="clearFilters()"
+        [disabled]="isLoading() || !logs().length"
+      >
+        Limpiar filtros
+      </button>
+    </div>
+
+    <div class="filters-shell">
+      <label class="field" for="session-filter">
+        <span>Chat</span>
+        <select
+          id="session-filter"
+          [value]="selectedSession()"
+          (change)="updateSelectedSession(sessionFilter.value)"
+          #sessionFilter
+        >
+          <option value="">Todas</option>
+          @for (option of sessionOptions(); track option.value) {
+            <option [value]="option.value">{{ option.label }}</option>
+          }
+        </select>
+      </label>
+
+      <label class="field" for="period-filter">
+        <span>Periodo</span>
+        <select
+          id="period-filter"
+          [value]="selectedPeriod()"
+          (change)="updateSelectedPeriod(periodFilter.value)"
+          #periodFilter
+        >
+          @for (option of periodOptions; track option.value) {
+            <option [value]="option.value">{{ option.label }}</option>
+          }
+        </select>
+      </label>
+    </div>
+  </section>
+
+  <section class="panel" aria-labelledby="descarga-title">
+    <div class="panel__header">
+      <div>
+        <span class="section-label">Exportar</span>
+        <h2 id="descarga-title">Descargar conversaciones</h2>
+      </div>
+    </div>
+
+    <div class="download-shell">
+      <label class="field" for="download-from">
+        <span>Desde</span>
+        <input
+          id="download-from"
+          type="date"
+          [value]="downloadFromDate()"
+          (input)="updateDownloadFromDate(fromInput.value)"
+          #fromInput
+        />
+      </label>
+
+      <label class="field" for="download-to">
+        <span>Hasta</span>
+        <input
+          id="download-to"
+          type="date"
+          [value]="downloadToDate()"
+          (input)="updateDownloadToDate(toInput.value)"
+          #toInput
+        />
+      </label>
+
+      <label class="field" for="download-format">
+        <span>Formato</span>
+        <select
+          id="download-format"
+          [value]="downloadFormat()"
+          (change)="updateDownloadFormat(formatSelect.value)"
+          #formatSelect
+        >
+          <option value="txt">TXT</option>
+          <option value="pdf">PDF</option>
+          <option value="json">JSON</option>
+          <option value="csv">CSV</option>
+        </select>
+      </label>
+
+      <div class="download-action">
+        <button
+          class="primary-button"
+          type="button"
+          (click)="downloadConversations()"
+          [disabled]="!!dateRangeError() || isDownloading()"
+          aria-label="Descargar conversaciones"
+        >
+          @if (isDownloading()) {
+            <span class="spinner" aria-hidden="true"></span>
+            Descargando...
+          } @else {
+            Descargar
+          }
+        </button>
+      </div>
+    </div>
+
+    @if (dateRangeError()) {
+      <p class="alert alert--error" role="alert">{{ dateRangeError() }}</p>
+    }
+    @if (downloadError()) {
+      <p class="alert alert--error" role="alert">{{ downloadError() }}</p>
+    }
+    @if (downloadEmpty()) {
+      <p class="alert alert--info" role="status">No hay conversaciones en el rango seleccionado.</p>
+    }
+  </section>
+
+  <section class="panel" aria-labelledby="tabla-historica-title">
+    <div class="panel__header">
+      <div>
+        <span class="section-label">Historial</span>
+        <h2 id="tabla-historica-title">Mensajes registrados</h2>
+      </div>
+
+      <p class="panel__meta">
+        @if (errorMessage()) {
+          {{ errorMessage() }}
+        } @else {
+          {{ visibleMessages() }} mensajes en la vista actual
+        }
+      </p>
+    </div>
+
+    <app-tabla-component
+      caption="Tabla de mensajes historicos"
+      [columns]="tableColumns"
+      [rows]="tableRows()"
+      [loading]="isLoading()"
+      loadingMessage="Cargando mensajes historicos..."
+      [emptyMessage]="emptyTableMessage()"
+    />
+
+    @if (filteredRows().length > 10) {
+      <div class="pagination" aria-label="Paginacion de mensajes">
+        <p class="pagination__meta">{{ paginationLabel() }}</p>
+
+        <div class="pagination__actions">
+          <button
+            class="ghost-button"
+            type="button"
+            (click)="goToPreviousPage()"
+            [disabled]="currentPage() === 1"
+          >
+            Anterior
+          </button>
+
+          <span class="pagination__page">Pagina {{ currentPage() }} de {{ totalPages() }}</span>
+
+          <button
+            class="ghost-button"
+            type="button"
+            (click)="goToNextPage()"
+            [disabled]="currentPage() === totalPages()"
+          >
+            Siguiente
+          </button>
+        </div>
+      </div>
+    }
+
+    <table class="print-table" aria-label="Tabla para impresion">
+      <thead>
+        <tr>
+          <th scope="col">Chat</th>
+          <th scope="col">Usuario</th>
+          <th scope="col">Bot</th>
+          <th scope="col">Fecha</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (row of filteredRows(); track row.id) {
+          <tr>
+            <td>{{ row.sessionId }}</td>
+            <td>{{ row.userMessage || '-' }}</td>
+            <td>{{ row.botMessage || '-' }}</td>
+            <td>{{ row.timestamp }}</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </section>
+</section>

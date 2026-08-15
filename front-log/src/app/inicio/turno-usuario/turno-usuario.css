@@ -1,0 +1,56 @@
+:host {
+  display: block;
+}
+
+.user-turn {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.user-bubble {
+  display: grid;
+  gap: 0.45rem;
+  width: min(78%, 34rem);
+  border: 1px solid color-mix(in srgb, var(--accent-green), transparent 48%);
+  border-radius: 1rem 1rem 0.3rem 1rem;
+  padding: 0.85rem;
+  background: color-mix(in srgb, var(--accent-green), var(--bg-card) 84%);
+  color: var(--text-primary);
+  box-shadow: 0 10px 24px rgb(0 0 0 / 0.14);
+}
+
+.user-bubble--selection {
+  border-color: color-mix(in srgb, var(--accent-blue-bright), transparent 36%);
+}
+
+.user-bubble p,
+.user-bubble time {
+  margin: 0;
+}
+
+.user-bubble p {
+  line-height: 1.55;
+  white-space: pre-wrap;
+}
+
+.user-bubble time {
+  justify-self: end;
+  color: var(--text-secondary);
+  font-size: var(--font-size-xs);
+}
+
+.selection-mark {
+  width: fit-content;
+  border-radius: 999px;
+  padding: 0.25rem 0.55rem;
+  background: color-mix(in srgb, var(--accent-green), transparent 78%);
+  color: var(--accent-green-text);
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+}
+
+@media (max-width: 620px) {
+  .user-bubble {
+    width: 92%;
+  }
+}

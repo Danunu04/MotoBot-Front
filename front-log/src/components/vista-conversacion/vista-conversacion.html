@@ -1,0 +1,147 @@
+@if (mode() === 'historial' && historyTurn(); as turn) {
+  <article class="history-bot-turn" [attr.aria-label]="turn.originLabel || 'Mensaje del bot'">
+    @if (turn.originLabel) {
+      <span class="history-bot-turn__origin">{{ turn.originLabel }}</span>
+    }
+    <p class="history-bot-turn__text">{{ turn.text }}</p>
+
+    @if (turn.format === 'botones' && historyOptions().length > 0) {
+      <div class="history-buttons" aria-label="Botones que recibió la persona">
+        @for (option of historyOptions(); track option.option_id) {
+          <app-opcion-conversacion
+            [option]="option"
+            [blockId]="turn.turnId"
+            blockFormat="botones"
+            [totalOptions]="historyOptions().length"
+            [readonlyView]="true"
+            appearance="history-button"
+          />
+        }
+      </div>
+    } @else if (turn.format === 'lista' && historyOptions().length > 0) {
+      <div class="history-list-opener" aria-label="Control que abrió el listado">
+        <span>{{ turn.listName || 'Ver opciones' }}</span>
+        <span aria-hidden="true">⌄</span>
+      </div>
+      <div class="history-list-panel" aria-label="Opciones que se desplegaron">
+        <span class="history-list-panel__label">Opciones desplegadas</span>
+        @for (option of historyOptions(); track option.option_id) {
+          <app-opcion-conversacion
+            [option]="option"
+            [blockId]="turn.turnId"
+            blockFormat="lista"
+            [totalOptions]="historyOptions().length"
+            [readonlyView]="true"
+            appearance="history-list"
+          />
+        }
+      </div>
+    }
+
+    <time class="history-bot-turn__time" [attr.datetime]="turn.timestamp">{{ historyTime() }}</time>
+  </article>
+} @else if (block(); as editorBlock) {
+<div class="conversation-view">
+  <section class="conversation-view__messages" aria-label="Mensajes del bot">
+    <h3>
+      El bot dice@if (editorBlock.mensajes_previos.length > 0) {<span>, en este orden</span>}
+    </h3>
+
+    <div class="message-sequence">
+      @for (previous of editorBlock.mensajes_previos; track previous.message_key; let index = $index) {
+        <app-mensaje-editable
+          [message]="previous"
+          [updatedBy]="updatedBy()"
+          [sequenceNumber]="sequenceNumber(index)"
+          [disabled]="readonlyView()"
+          (contentChanged)="relayChange($event)"
+          (restored)="reloadRequested.emit()"
+        />
+      }
+
+      <app-mensaje-editable
+        [message]="editorBlock.prompt"
+        [updatedBy]="updatedBy()"
+        [sequenceNumber]="promptSequenceNumber()"
+        [disabled]="readonlyView()"
+        (contentChanged)="relayChange($event)"
+        (restored)="reloadRequested.emit()"
+      />
+    </div>
+  </section>
+
+  @if (editorBlock.formato === 'lista' && editorBlock.presentacion) {
+    <section class="list-presentation" aria-label="Presentación del listado">
+      <div class="list-presentation__intro">
+        <strong>Así se abre el listado</strong>
+        <p>Estos textos forman parte de lo que la persona ve en WhatsApp.</p>
+      </div>
+      <div class="list-presentation__fields">
+        @if (listButtonMessage(); as buttonMessage) {
+          <app-mensaje-editable
+            appearance="compact"
+            [message]="buttonMessage"
+            [updatedBy]="updatedBy()"
+            contextLabel="Botón que abre el listado"
+            [disabled]="readonlyView()"
+            (contentChanged)="relayChange($event)"
+            (restored)="reloadRequested.emit()"
+          />
+        }
+        @if (listSectionMessage(); as sectionMessage) {
+          <app-mensaje-editable
+            appearance="compact"
+            [message]="sectionMessage"
+            [updatedBy]="updatedBy()"
+            contextLabel="Título del listado"
+            [disabled]="readonlyView()"
+            (contentChanged)="relayChange($event)"
+            (restored)="reloadRequested.emit()"
+          />
+        }
+      </div>
+    </section>
+  }
+
+  <section class="conversation-view__choices" aria-label="Respuesta del usuario">
+    <header class="choices-heading">
+      <h3>El usuario elige</h3>
+      <span class="format-badge">{{ formatLabel() }}</span>
+    </header>
+
+    @if (editorBlock.opciones.length > 0) {
+      <div
+        class="option-list"
+        [class.option-list--buttons]="editorBlock.formato === 'botones'"
+        [class.option-list--list]="editorBlock.formato === 'lista'"
+      >
+        @for (option of editorBlock.opciones; track option.option_id) {
+          <app-opcion-conversacion
+            [option]="option"
+            [blockId]="editorBlock.block_id"
+            [blockFormat]="editorBlock.formato"
+            [totalOptions]="editorBlock.opciones.length"
+            [updatedBy]="updatedBy()"
+            [readonlyView]="readonlyView()"
+            [responses]="responses()"
+            [responseLimit]="editorBlock.limites_alta.respuesta"
+            (navigateTo)="navigateTo.emit($event)"
+            (contentChanged)="relayChange($event)"
+            (reloadRequested)="reloadRequested.emit()"
+            (blockChanged)="blockChanged.emit($event)"
+          />
+        }
+      </div>
+    } @else {
+      <div class="written-answer">
+        @if (editorBlock.formato === 'texto_libre') {
+          <strong>La persona responde escribiendo.</strong>
+        } @else {
+          <strong>Este mensaje cierra este recorrido.</strong>
+        }
+        <p>{{ editorBlock.formato_motivo }}</p>
+      </div>
+    }
+  </section>
+</div>
+}

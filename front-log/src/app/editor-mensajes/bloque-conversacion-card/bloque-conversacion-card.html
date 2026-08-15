@@ -1,0 +1,47 @@
+<article class="conversation-block" tabindex="-1">
+  <header class="conversation-block__header">
+    <div class="conversation-block__title">
+      <span>{{ block().orden_recorrido }}</span>
+      <div>
+        <small>Momento de la conversación</small>
+        <h2>{{ block().titulo }}</h2>
+      </div>
+    </div>
+  </header>
+
+  <app-vista-conversacion
+    [block]="block()"
+    [updatedBy]="updatedBy()"
+    [readonlyView]="readonlyView()"
+    [responses]="responses()"
+    (navigateTo)="navigateTo.emit($event)"
+    (contentChanged)="contentChanged.emit($event)"
+    (reloadRequested)="reloadRequested.emit()"
+    (blockChanged)="blockChanged.emit($event)"
+  />
+
+  @if (block().acepta_nuevas_opciones) {
+    <footer class="conversation-block__footer">
+      @if (!showAddOption()) {
+        <button
+          type="button"
+          class="add-button"
+          (click)="showAddOption.set(true)"
+          [disabled]="readonlyView()"
+          [attr.aria-describedby]="readonlyView() ? 'editor-storage-readonly' : null"
+        >
+          + Agregar opción
+        </button>
+      } @else if (!readonlyView()) {
+        <app-alta-opcion-panel
+          [block]="block()"
+          [responses]="responses()"
+          [destinations]="destinations()"
+          [updatedBy]="updatedBy()"
+          (created)="handleCreated($event)"
+          (cancelled)="showAddOption.set(false)"
+        />
+      }
+    </footer>
+  }
+</article>

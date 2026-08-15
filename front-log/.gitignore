@@ -45,3 +45,11 @@ Thumbs.db
 
 # Notas locales
 IVAN.md
+*.backup
+.backups/
+.env
+.env.*
+!.env.example
+logs/
+*.tmp
+*.temp

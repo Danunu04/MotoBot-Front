@@ -1,0 +1,8 @@
+@if (deliveredMessage()) {
+  <app-vista-conversacion mode="historial" [historyTurn]="historyTurn()" [readonlyView]="true" />
+} @else {
+  <aside class="system-note" aria-label="Evento de la conversación">
+    <span>{{ noteText() }}</span>
+    <time [attr.datetime]="turn().timestamp">{{ timeLabel() }}</time>
+  </aside>
+}

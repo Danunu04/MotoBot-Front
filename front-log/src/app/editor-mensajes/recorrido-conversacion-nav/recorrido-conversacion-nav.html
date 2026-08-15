@@ -1,0 +1,68 @@
+<aside class="journey-nav" aria-label="Recorrido de la conversación">
+  <header>
+    <span>Recorrido</span>
+    <h2>Momentos de la conversación</h2>
+  </header>
+
+  <nav aria-label="Momentos en orden">
+    <ul class="journey-list">
+      @for (item of visibleItems(); track item.block.block_id) {
+        <li [style.padding-left.rem]="item.depth * 0.8">
+          <div class="journey-item" [class.journey-item--active]="activeBlockId() === item.block.block_id">
+            @if (item.hasChildren) {
+              <button
+                type="button"
+                class="branch-toggle"
+                (click)="toggle(item.block.block_id)"
+                [attr.aria-expanded]="item.expanded"
+                [attr.aria-label]="(item.expanded ? 'Plegar ' : 'Desplegar ') + item.block.titulo"
+              >
+                {{ item.expanded ? '⌄' : '›' }}
+              </button>
+            } @else {
+              <span class="branch-spacer" aria-hidden="true"></span>
+            }
+            <button
+              type="button"
+              class="journey-link"
+              (click)="select(item.block.block_id)"
+              [attr.aria-current]="activeBlockId() === item.block.block_id ? 'location' : null"
+            >
+              <span>{{ item.block.orden_recorrido }}</span>
+              {{ item.block.titulo }}
+            </button>
+          </div>
+        </li>
+      }
+    </ul>
+
+    @if (otherBlocks().length > 0) {
+      <section class="other-moments">
+        <button
+          type="button"
+          class="other-moments__toggle"
+          (click)="othersCollapsed.set(!othersCollapsed())"
+          [attr.aria-expanded]="!othersCollapsed()"
+        >
+          <span>{{ othersCollapsed() ? '›' : '⌄' }}</span>
+          Otros momentos de la conversación
+        </button>
+        @if (!othersCollapsed()) {
+          <ul class="journey-list">
+            @for (block of otherBlocks(); track block.block_id) {
+              <li>
+                <div class="journey-item" [class.journey-item--active]="activeBlockId() === block.block_id">
+                  <span class="branch-spacer" aria-hidden="true"></span>
+                  <button type="button" class="journey-link" (click)="select(block.block_id)">
+                    <span>{{ block.orden_recorrido }}</span>
+                    {{ block.titulo }}
+                  </button>
+                </div>
+              </li>
+            }
+          </ul>
+        }
+      </section>
+    }
+  </nav>
+</aside>

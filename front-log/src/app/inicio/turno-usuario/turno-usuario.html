@@ -1,0 +1,13 @@
+<div class="user-turn">
+  <article
+    class="user-bubble"
+    [class.user-bubble--selection]="turn().isOptionSelection"
+    [attr.aria-label]="turn().isOptionSelection ? 'Opción elegida por la persona' : 'Mensaje escrito por la persona'"
+  >
+    @if (turn().isOptionSelection) {
+      <span class="selection-mark"><span aria-hidden="true">✓</span> Opción elegida</span>
+    }
+    <p>{{ turn().text }}</p>
+    <time [attr.datetime]="turn().timestamp">{{ timeLabel() }}</time>
+  </article>
+</div>

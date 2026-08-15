@@ -1,0 +1,31 @@
+:host {
+  display: block;
+}
+
+.system-note {
+  display: flex;
+  justify-self: center;
+  align-items: center;
+  gap: 0.45rem;
+  width: fit-content;
+  max-width: 88%;
+  border-radius: 999px;
+  padding: 0.45rem 0.75rem;
+  background: color-mix(in srgb, var(--bg-input), var(--border-subtle) 20%);
+  color: var(--text-secondary);
+  font-size: var(--font-size-sm);
+  text-align: center;
+}
+
+.system-note time {
+  font-size: var(--font-size-xs);
+  white-space: nowrap;
+}
+
+@media (max-width: 620px) {
+  .system-note {
+    align-items: flex-start;
+    border-radius: 0.8rem;
+    flex-direction: column;
+  }
+}

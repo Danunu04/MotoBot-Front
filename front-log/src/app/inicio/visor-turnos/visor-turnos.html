@@ -1,0 +1,65 @@
+<div class="turn-viewer">
+  <div class="conversation-controls" aria-label="Controles de visualización de conversaciones">
+    <p>
+      <strong>Vista compacta</strong>
+      <span>Las conversaciones empiezan cerradas para que puedas recorrer muchas rápidamente.</span>
+    </p>
+    <div class="conversation-controls__actions">
+      <button type="button" (click)="collapseAll()" [disabled]="allCollapsed()">
+        Colapsar todas
+      </button>
+      <button type="button" (click)="expandAll()" [disabled]="allExpanded()">
+        Expandir todas
+      </button>
+    </div>
+  </div>
+
+  @for (group of groups(); track group.sessionId) {
+    <article class="conversation-group" [class.conversation-group--collapsed]="!isExpanded(group.sessionId)">
+      <header class="conversation-group__header">
+        <button
+          type="button"
+          class="conversation-group__toggle"
+          [attr.aria-expanded]="isExpanded(group.sessionId)"
+          [attr.aria-controls]="'conversation-turns-' + $index"
+          [attr.aria-label]="(isExpanded(group.sessionId) ? 'Colapsar ' : 'Expandir ') + group.label"
+          (click)="toggleConversation(group.sessionId)"
+        >
+          <span class="conversation-group__identity">
+            <span class="conversation-group__eyebrow">Conversación registrada</span>
+            <span class="conversation-group__title">{{ group.label }}</span>
+          </span>
+          <span class="conversation-group__summary">
+            <span>{{ group.turns.length }} {{ group.turns.length === 1 ? 'turno' : 'turnos' }}</span>
+            <strong>{{ isExpanded(group.sessionId) ? 'Colapsar' : 'Expandir' }}</strong>
+            <span class="conversation-group__chevron" aria-hidden="true">
+              {{ isExpanded(group.sessionId) ? '⌃' : '⌄' }}
+            </span>
+          </span>
+        </button>
+      </header>
+
+      @if (isExpanded(group.sessionId)) {
+        <div class="conversation-group__chat" [id]="'conversation-turns-' + $index">
+          @for (turn of group.turns; track turn.turnId) {
+            @if (turn.newSession) {
+              <app-separador-sesion [date]="turn.date || turn.timestamp" />
+            }
+
+            @if (isBotTurn(turn)) {
+              <app-vista-conversacion
+                mode="historial"
+                [historyTurn]="toHistoryTurn(turn)"
+                [readonlyView]="true"
+              />
+            } @else if (turn.type === 'respuesta_usuario') {
+              <app-turno-usuario [turn]="turn" />
+            } @else {
+              <app-turno-sistema [turn]="turn" />
+            }
+          }
+        </div>
+      }
+    </article>
+  }
+</div>

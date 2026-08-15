@@ -1,0 +1,100 @@
+<section
+  class="editable-message"
+  [class.editable-message--compact]="appearance() === 'compact'"
+  [attr.aria-label]="contextLabel() || message().label"
+>
+  <div class="editable-message__heading">
+    <div class="editable-message__identity">
+      @if (sequenceNumber() !== null) {
+        <span class="editable-message__number" aria-hidden="true">{{ sequenceNumber() }}</span>
+      }
+      <span>{{ contextLabel() || message().label }}</span>
+    </div>
+
+    @if (editable() && !editing()) {
+      <div class="editable-message__actions">
+        <button
+          type="button"
+          class="text-action"
+          (click)="requestEdit()"
+          [disabled]="saving() || disabled()"
+        >
+          Editar
+        </button>
+        <button
+          type="button"
+          class="text-action"
+          (click)="requestRestore()"
+          [disabled]="saving() || disabled()"
+        >
+          Restaurar
+        </button>
+      </div>
+    }
+  </div>
+
+  @if (pendingAction(); as action) {
+    <div class="shared-warning" role="alert">
+      @if (isShared()) {
+        <strong>Este mensaje también se usa en:</strong>
+        <ul>
+          @for (title of sharedWith(); track title) {
+            <li>{{ title }}</li>
+          }
+        </ul>
+        <p>Si lo cambiás, cambia allá también.</p>
+      } @else {
+        <strong>¿Restaurar el texto original?</strong>
+        <p>Se descartará la versión editada actualmente.</p>
+      }
+      <div class="shared-warning__actions">
+        <button type="button" class="text-action" (click)="cancelPendingAction()">Cancelar</button>
+        <button type="button" class="warning-action" (click)="confirmPendingAction()">
+          {{ action === 'edit' ? 'Editar de todos modos' : 'Restaurar de todos modos' }}
+        </button>
+      </div>
+    </div>
+  }
+
+  @if (editing()) {
+    <label class="edit-field">
+      <span class="sr-only">{{ contextLabel() || message().label }}</span>
+      <textarea
+        rows="4"
+        [formControl]="draft"
+        [attr.maxlength]="message().limite_caracteres"
+      ></textarea>
+      <span class="char-count" [class.char-count--error]="isOverLimit()">
+        {{ draftValue().length }} / {{ message().limite_caracteres }}
+      </span>
+    </label>
+    @if (copyChoices().length > 0) {
+      <app-copiar-texto-mensaje
+        [messages]="copyChoices()"
+        [disabled]="saving() || disabled()"
+        (textCopied)="applyCopiedText($event)"
+      />
+    }
+    <div class="edit-actions">
+      <button type="button" class="text-action" (click)="cancelEditing()" [disabled]="saving()">
+        Cancelar
+      </button>
+      <button
+        type="button"
+        class="save-action"
+        (click)="save()"
+        [disabled]="disabled() || saving() || !draftValue().trim() || isOverLimit()"
+      >
+        {{ saving() ? 'Guardando…' : 'Guardar' }}
+      </button>
+    </div>
+  } @else {
+    <p class="message-bubble">{{ message().content }}</p>
+  }
+
+  @if (feedback() === 'saved') {
+    <p class="feedback feedback--success" role="status">Cambio guardado.</p>
+  } @else if (feedback() === 'error') {
+    <p class="feedback feedback--error" role="alert">No se pudo guardar. Intentá de nuevo.</p>
+  }
+</section>

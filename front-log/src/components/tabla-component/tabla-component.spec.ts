@@ -12,6 +12,8 @@ describe('TablaComponent', () => {
     }).compileComponents();
 
     fixture = TestBed.createComponent(TablaComponent);
+    fixture.componentRef.setInput('columns', []);
+    fixture.componentRef.setInput('rows', []);
     component = fixture.componentInstance;
     await fixture.whenStable();
   });

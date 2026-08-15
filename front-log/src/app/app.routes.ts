@@ -15,7 +15,7 @@ export const routes: Routes = [
   },
   {
     path: 'home',
-    title: 'Mensajes historicos',
+    title: 'Conversaciones',
     canActivate: [authGuard],
     loadComponent: () => import('./inicio/inicio').then((module) => module.Inicio),
   },
@@ -39,26 +39,19 @@ export const routes: Routes = [
   },
   {
     path: 'editor-mensajes',
-    title: 'Editor de mensajes',
+    title: 'Editor de conversación',
     canActivate: [authGuard],
     loadComponent: () =>
       import('./editor-mensajes/editor-mensajes').then((module) => module.EditorMensajes),
   },
   {
     path: 'editor-opciones',
-    title: 'Editor de opciones',
-    canActivate: [authGuard],
-    loadComponent: () =>
-      import('./editor-opciones/editor-opciones').then((module) => module.EditorOpciones),
+    pathMatch: 'full',
+    redirectTo: 'editor-mensajes',
   },
   {
     path: 'editor-opciones/:group',
-    title: 'Editor de grupo de opciones',
-    canActivate: [authGuard],
-    loadComponent: () =>
-      import('./editor-opciones-detalle/editor-opciones-detalle').then(
-        (module) => module.EditorOpcionesDetalle,
-      ),
+    redirectTo: 'editor-mensajes',
   },
   {
     path: '**',

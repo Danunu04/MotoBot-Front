@@ -1,0 +1,108 @@
+:host {
+  display: block;
+}
+
+.copy-message {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.copy-message__toggle,
+.copy-message__panel-heading button {
+  width: fit-content;
+  border: 1px solid var(--border-focus);
+  border-radius: 0.6rem;
+  padding: 0.5rem 0.7rem;
+  background: transparent;
+  color: var(--accent-blue-bright);
+  cursor: pointer;
+  font: inherit;
+  font-size: var(--font-size-xs);
+  font-weight: 800;
+}
+
+.copy-message__toggle:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.copy-message__explanation,
+.copy-message__status,
+.copy-message__results p {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: var(--font-size-xs);
+  line-height: 1.45;
+}
+
+.copy-message__status {
+  color: var(--accent-green);
+  font-weight: 750;
+}
+
+.copy-message__panel {
+  display: grid;
+  gap: 0.7rem;
+  border: 1px solid var(--border-subtle);
+  border-radius: 0.75rem;
+  padding: 0.8rem;
+  background: var(--bg-card);
+}
+
+.copy-message__panel-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.copy-message__panel label {
+  display: grid;
+  gap: 0.35rem;
+  color: var(--text-secondary);
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+}
+
+.copy-message__panel input {
+  width: 100%;
+  border: 1px solid var(--border-subtle);
+  border-radius: 0.6rem;
+  padding: 0.65rem;
+  background: var(--bg-input);
+  color: var(--text-primary);
+  font: inherit;
+}
+
+.copy-message__results {
+  display: grid;
+  max-height: 15rem;
+  gap: 0.45rem;
+  overflow-y: auto;
+}
+
+.copy-message__results button {
+  display: grid;
+  gap: 0.2rem;
+  border: 1px solid var(--border-subtle);
+  border-radius: 0.65rem;
+  padding: 0.65rem;
+  background: var(--bg-item);
+  color: var(--text-primary);
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+}
+
+.copy-message__results button span {
+  color: var(--text-secondary);
+  font-size: var(--font-size-xs);
+  line-height: 1.4;
+  white-space: pre-wrap;
+}
+
+button:focus-visible,
+input:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--border-focus), transparent 35%);
+  outline-offset: 2px;
+}

@@ -1,0 +1,231 @@
+<form class="add-option" [formGroup]="form" (ngSubmit)="submit()" novalidate>
+  <header class="add-option__header">
+    <div>
+      <span>Nueva opción</span>
+      <h3>Completá los cuatro pasos</h3>
+    </div>
+    <button type="button" class="text-button" (click)="cancelled.emit()">Cerrar</button>
+  </header>
+
+  <ol class="step-list" aria-label="Pasos para crear la opción">
+    <li><span>1</span>Qué dice</li>
+    <li><span>2</span>Qué responde el bot</li>
+    <li><span>3</span>A dónde lleva</li>
+    <li><span>4</span>Posición</li>
+  </ol>
+
+  @if (changesToList()) {
+    <div class="format-change" role="status">
+      <strong>Al guardar, cambia la forma de mostrar las opciones.</strong>
+      <p>
+        Con 4 o más opciones, WhatsApp ya no muestra botones sueltos: el usuario va a ver un
+        botón que abre un listado con todas las opciones. Al agregar esta, el bloque pasa a
+        mostrarse así. Las opciones existentes conservarán su texto de botón y sumarán un título
+        de lista editable con el mismo texto. No se recorta nada: el límite aumenta de 20 a 24
+        caracteres, y después podés aprovechar ese espacio adicional si querés.
+      </p>
+    </div>
+  }
+
+  <fieldset class="form-step">
+    <legend><span>1</span> ¿Qué dice la opción?</legend>
+    <label class="field" [class.field--invalid]="fieldInvalid('title')">
+      <span>{{ requiresListFields() ? 'Título en la lista' : 'Texto del botón' }}</span>
+      <input
+        type="text"
+        formControlName="title"
+        data-control="title"
+        [attr.maxlength]="titleLimit()"
+        [attr.aria-invalid]="fieldInvalid('title')"
+        aria-describedby="title-error title-count"
+        placeholder="Por ejemplo: Ver garantías"
+      />
+      <span class="field-meta">
+        @if (fieldInvalid('title')) {
+          <small id="title-error" class="field-error-message">{{ fieldError('title') }}</small>
+        }
+        <small id="title-count" class="field-count">{{ titleLength() }} / {{ titleLimit() }}</small>
+      </span>
+    </label>
+
+    @if (requiresListFields()) {
+      <label class="field" [class.field--invalid]="fieldInvalid('buttonTitle')">
+        <span>Texto del botón</span>
+        <input
+          type="text"
+          formControlName="buttonTitle"
+          data-control="buttonTitle"
+          [attr.maxlength]="buttonTitleLimit()"
+          [attr.aria-invalid]="fieldInvalid('buttonTitle')"
+          aria-describedby="button-title-help button-title-error button-title-count"
+          placeholder="Por ejemplo: Ver garantías"
+        />
+        <small id="button-title-help" class="field-help">
+          Se usará si este bloque vuelve a mostrar botones.
+        </small>
+        <span class="field-meta">
+          @if (fieldInvalid('buttonTitle')) {
+            <small id="button-title-error" class="field-error-message">
+              {{ fieldError('buttonTitle') }}
+            </small>
+          }
+          <small id="button-title-count" class="field-count">
+            {{ buttonTitleLength() }} / {{ buttonTitleLimit() }}
+          </small>
+        </span>
+      </label>
+    }
+
+    @if (requiresDescription()) {
+      <label class="field" [class.field--invalid]="fieldInvalid('description')">
+        <span>Descripción</span>
+        <textarea
+          rows="3"
+          formControlName="description"
+          data-control="description"
+          [attr.maxlength]="descriptionLimit()"
+          [attr.aria-invalid]="fieldInvalid('description')"
+          aria-describedby="description-error description-count"
+          placeholder="La línea breve que aparece debajo del título"
+        ></textarea>
+        <span class="field-meta">
+          @if (fieldInvalid('description')) {
+            <small id="description-error" class="field-error-message">
+              {{ fieldError('description') }}
+            </small>
+          }
+          <small id="description-count" class="field-count">
+            {{ descriptionLength() }} / {{ descriptionLimit() }}
+          </small>
+        </span>
+      </label>
+    }
+  </fieldset>
+
+  <fieldset class="form-step">
+    <legend><span>2</span> ¿Qué responde el bot?</legend>
+    <div class="choice-toggle">
+      <label>
+        <input type="radio" formControlName="responseMode" value="nuevo" />
+        <span>Escribir una respuesta nueva</span>
+      </label>
+      <label>
+        <input type="radio" formControlName="responseMode" value="sin_respuesta" />
+        <span>No enviar un mensaje adicional</span>
+      </label>
+    </div>
+
+    @if (responseModeIs('nuevo')) {
+      <label class="field" [class.field--invalid]="fieldInvalid('newResponse')">
+        <span>Respuesta del bot</span>
+        <textarea
+          rows="4"
+          formControlName="newResponse"
+          data-control="newResponse"
+          [attr.maxlength]="responseLimit()"
+          [attr.aria-invalid]="fieldInvalid('newResponse')"
+          aria-describedby="new-response-error new-response-count"
+          placeholder="Escribí lo que va a responder el bot"
+        ></textarea>
+        <span class="field-meta">
+          @if (fieldInvalid('newResponse')) {
+            <small id="new-response-error" class="field-error-message">
+              {{ fieldError('newResponse') }}
+            </small>
+          }
+          <small id="new-response-count" class="field-count">
+            {{ newResponseLength() }} / {{ responseLimit() }}
+          </small>
+        </span>
+      </label>
+      <app-copiar-texto-mensaje
+        [messages]="responses()"
+        [disabled]="creating()"
+        (textCopied)="copyResponseText($event)"
+      />
+    } @else {
+      <p class="no-own-response">
+        El bot pasa directamente al siguiente momento de la conversación y muestra el mensaje
+        de ese destino.
+      </p>
+    }
+  </fieldset>
+
+  <fieldset class="form-step">
+    <legend><span>3</span> ¿A dónde lleva?</legend>
+    <div class="field" [class.field--invalid]="fieldInvalid('destinationIndex')">
+      <label for="destination-search">Próximo momento de la conversación</label>
+      <div class="searchable-select">
+        <input
+          id="destination-search"
+          type="search"
+          formControlName="destinationSearch"
+          data-control="destinationIndex"
+          role="combobox"
+          autocomplete="off"
+          aria-controls="destination-results"
+          [attr.aria-expanded]="destinationOpen()"
+          [attr.aria-invalid]="fieldInvalid('destinationIndex')"
+          placeholder="Escribí para buscar un destino"
+          (focus)="showDestinationResults()"
+          (input)="showDestinationResults()"
+          (blur)="hideDestinationResults()"
+        />
+        @if (destinationOpen()) {
+          <div id="destination-results" class="destination-results" role="listbox">
+            @for (item of filteredDestinations(); track item.index) {
+              <button
+                type="button"
+                role="option"
+                [class.destination-choice--selected]="form.controls.destinationIndex.value === item.index"
+                [attr.aria-selected]="form.controls.destinationIndex.value === item.index"
+                (mousedown)="$event.preventDefault()"
+                (click)="selectDestination(item.index)"
+              >
+                {{ item.destination.label }}
+              </button>
+            } @empty {
+              <p>No hay destinos que coincidan con la búsqueda.</p>
+            }
+          </div>
+        }
+      </div>
+      @if (fieldInvalid('destinationIndex')) {
+        <small class="field-error-message">{{ fieldError('destinationIndex') }}</small>
+      }
+    </div>
+
+  </fieldset>
+
+  <fieldset class="form-step">
+    <legend><span>4</span> ¿En qué posición?</legend>
+    <label class="field" [class.field--invalid]="fieldInvalid('position')">
+      <span>Ubicación</span>
+      <select
+        formControlName="position"
+        data-control="position"
+        [attr.aria-invalid]="fieldInvalid('position')"
+      >
+        @for (position of positions(); track position.value) {
+          <option [ngValue]="position.value">{{ position.label }}</option>
+        }
+      </select>
+      @if (fieldInvalid('position')) {
+        <small class="field-error-message">{{ fieldError('position') }}</small>
+      }
+    </label>
+  </fieldset>
+
+  @if (errorMessage()) {
+    <p class="submit-error" role="alert">{{ errorMessage() }}</p>
+  }
+
+  <footer class="form-actions">
+    <button type="button" class="text-button" (click)="cancelled.emit()" [disabled]="creating()">
+      Cancelar
+    </button>
+    <button type="submit" class="primary-button" [disabled]="creating() || titleLimit() < 1">
+      {{ creating() ? 'Guardando…' : 'Guardar opción completa' }}
+    </button>
+  </footer>
+</form>
